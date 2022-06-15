@@ -97,6 +97,12 @@ def main():
         while True:
             myline=ser.readline()
             myparts=myline.decode('ascii').rstrip().split(',')
+            for mpidx in range(len(myparts)):  
+                if re.match("^[0-9]*$",myparts[mpidx]):
+                    myparts[mpidx]=int(myparts[mpidx])
+                elif re.match("^[0-9\.]*$",myparts[mpidx]):
+                    myparts[mpidx]=float(myparts[mpidx])
+            print(myparts)
             if myparts[0]=="STAT":
                 value_collection['STAT'].decode(myparts)
                 dbusservice["/Voltages/Sum"]=f"{value_collection['STAT'].packVdc} V"
@@ -122,17 +128,18 @@ def main():
                 if str(myparts[1]) not in value_collection["MODULES"]:
                     value_collection["MODULES"][str(myparts[1])]=MODULE_proto()
                 value_collection["MODULES"][str(myparts[1])].decode(myparts)
+
                 dbusservice[f"/Voltages/Sum{myparts[1]}"]=f'{value_collection["MODULES"][str(myparts[1])].moduleVdc} V'
                 dbusservice[f"/Raw/Voltages/Sum{myparts[1]}"]=value_collection["MODULES"][str(myparts[1])].moduleVdc
                 dbusservice[f"/Info/Temp/Sensor{myparts[1]*2}"]=f'{value_collection["MODULES"][str(myparts[1])].negTempC} C'
                 dbusservice[f"/Raw/Info/Temp/Sensor{myparts[1]*2}"]=value_collection["MODULES"][str(myparts[1])].negTempC
                 dbusservice[f"/Info/Temp/Sensor{myparts[1]*2+1}"]=f'{value_collection["MODULES"][str(myparts[1])].posTempC} C'
                 dbusservice[f"/Raw/Info/Temp/Sensor{myparts[1]*2+1}"]=value_collection["MODULES"][str(myparts[1])].posTempC
-                for cellid in range(1,7):
-                    dbusservice[f"/Voltages/Cell{myparts[1]}_{cellid}"]=f'{value_collection["MODULES"][str(myparts[1])].cellVdc[cellid]} V'
-                    dbusservice[f"/Raw/Voltages/Cell{myparts[1]}_{cellid}"]=value_collection["MODULES"][str(myparts[1])].cellVdc[cellid]
-                    dbusservice[f"/Balancing/Cell{myparts[1]}_{cellid}"]=f'{yn[value_collection["MODULES"][str(myparts[1])].cellBal[cellid]]}'
-                    dbusservice[f"/Raw/Balancing/Cell{myparts[1]}_{cellid}"]=value_collection["MODULES"][str(myparts[1])].cellBal[cellid]
+                for cellid in range(6):
+                    dbusservice[f"/Voltages/Cell{myparts[1]}_{cellidi+1}"]=f'{value_collection["MODULES"][str(myparts[1])].cellVdc[cellid]} V'
+                    dbusservice[f"/Raw/Voltages/Cell{myparts[1]}_{cellid+1}"]=value_collection["MODULES"][str(myparts[1])].cellVdc[cellid]
+                    dbusservice[f"/Balancing/Cell{myparts[1]}_{cellid+1}"]=f'{yn[value_collection["MODULES"][str(myparts[1])].cellBal[cellid]]}'
+                    dbusservice[f"/Raw/Balancing/Cell{myparts[1]}_{cellid+1}"]=value_collection["MODULES"][str(myparts[1])].cellBal[cellid]
 
 
     mainLoop()
