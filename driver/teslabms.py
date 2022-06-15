@@ -128,7 +128,7 @@ def main():
                 dbusservice[f"/Raw/Info/Temp/Sensor{myparts[1]*2}"]=value_collection["MODULES"][str(myparts[1])].negTempC
                 dbusservice[f"/Info/Temp/Sensor{myparts[1]*2+1}"]=f'{value_collection["MODULES"][str(myparts[1])].posTempC} C'
                 dbusservice[f"/Raw/Info/Temp/Sensor{myparts[1]*2+1}"]=value_collection["MODULES"][str(myparts[1])].posTempC
-                for cellid in range(6):
+                for cellid in range(1,7):
                     dbusservice[f"/Voltages/Cell{myparts[1]}_{cellid}"]=f'{value_collection["MODULES"][str(myparts[1])].cellVdc[cellid]} V'
                     dbusservice[f"/Raw/Voltages/Cell{myparts[1]}_{cellid}"]=value_collection["MODULES"][str(myparts[1])].cellVdc[cellid]
                     dbusservice[f"/Balancing/Cell{myparts[1]}_{cellid}"]=f'{yn[value_collection["MODULES"][str(myparts[1])].cellBal[cellid]]}'
@@ -182,15 +182,15 @@ if __name__ == "__main__":
     # Create the Tesla BMS paths
     dbusservice.add_path('/Info/Soc',                      -1)
     dbusservice.add_path('/Raw/Info/Soc',                  -1)
-    for sensorid in range(8):
+    for sensorid in range(1,9):
         dbusservice.add_path(f'/Info/Temp/Sensor{sensorid}',     -1)
         dbusservice.add_path(f'/Raw/Info/Temp/Sensor{sensorid}', -1)
 
     dbusservice.add_path('/Info/UpdateTimestamp',          -1)
     dbusservice.add_path('/Raw/Info/UpdateTimestamp',      -1)
 
-    for moduleid in range(4):
-        for cellid in range(6):
+    for moduleid in range(1,4):
+        for cellid in range(1,7):
             dbusservice.add_path(f'/Voltages/Cell{moduleid}_{cellid}',      -1)
             dbusservice.add_path(f'/Raw/Voltages/Cell{moduleid}_{cellid}',  -1)
             dbusservice.add_path(f'/Balancing/Cell{moduleid}_{cellid}',     -1)
