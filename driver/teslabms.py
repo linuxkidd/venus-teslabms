@@ -10,10 +10,10 @@ driver = {
     'name'        : 'Tesla BMS',
     'servicename' : 'teslabms',
     'instance'    : 1,
-    'id'          : 1,
+    'id'          : 0x01,
     'version'     : 1.0,
     'serial'      : 'tesla4s',
-    'connection'  : 'com.victronenergy.battery.ttyTESLABMS01'
+    'connection'  : 'com.victronenergy.battery.ttyTESLABMS'
 }
 
 def signal_handler(signal, frame):
