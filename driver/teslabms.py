@@ -86,7 +86,7 @@ class MODULE_proto():
 
 def main():
     DBusGMainLoop(set_as_default=True)
-	dbusservice = VeDbusService(driver['connection'])
+    dbusservice = VeDbusService(driver['connection'])
     current_mode=["Discharge","Charge","Storage"]
     yn=["No","Yes"]
     value_collection['STAT']=STAT_proto()
