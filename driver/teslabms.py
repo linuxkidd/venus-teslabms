@@ -85,8 +85,6 @@ class MODULE_proto():
         self.posTempC = float(packet_buffer[16])
 
 def main():
-    DBusGMainLoop(set_as_default=True)
-    dbusservice = VeDbusService(driver['connection'])
     current_mode=["Discharge","Charge","Storage"]
     yn=["No","Yes"]
     value_collection['STAT']=STAT_proto()
@@ -168,6 +166,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     serial_port = args.port
+
+    DBusGMainLoop(set_as_default=True)
+    dbusservice = VeDbusService(driver['connection'])
 
     # Create the management objects, as specified in the ccgx dbus-api document
     dbusservice.add_path('/Mgmt/ProcessName', __file__)
