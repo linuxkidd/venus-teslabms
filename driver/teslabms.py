@@ -9,8 +9,6 @@ sys.path.insert(1, os.path.join(os.path.dirname(__file__), './ext/velib_python')
 from vedbus import VeDbusService
 from settingsdevice import SettingsDevice
 
-dbusservice = VeDbusService(driver['connection'])
-
 os.environ['TZ'] = 'UTC'
 time.tzset()
 
@@ -23,6 +21,8 @@ driver = {
     'serial'      : 'tesla4s',
     'connection'  : 'com.victronenergy.battery.ttyTESLABMS'
 }
+
+dbusservice = VeDbusService(driver['connection'])
 
 def signal_handler(signal, frame):
     print('You pressed Ctrl+C!  Exiting...')
