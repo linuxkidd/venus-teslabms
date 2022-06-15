@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 
-import argparse, os, platform, re, serial, signal, sys, time
+import argparse, dbus, os, platform, re, serial, signal, sys, time
 from datetime import datetime as dt
+from dbus.mainloop.glib import DBusGMainLoop
+
+# Victron packages
+sys.path.insert(1, os.path.join(os.path.dirname(__file__), './ext/velib_python'))
+from vedbus import VeDbusService
+from settingsdevice import SettingsDevice
+
+dbusservice = VeDbusService(driver['connection'])
 
 os.environ['TZ'] = 'UTC'
 time.tzset()
@@ -11,7 +19,7 @@ driver = {
     'servicename' : 'teslabms',
     'instance'    : 1,
     'id'          : 0x01,
-    'version'     : 1.0,
+    'version'     : '1.0',
     'serial'      : 'tesla4s',
     'connection'  : 'com.victronenergy.battery.ttyTESLABMS'
 }
@@ -79,6 +87,7 @@ class MODULE_proto():
         self.posTempC = float(packet_buffer[16])
 
 def main():
+    DBusGMainLoop(set_as_default=True)
     current_mode=["Discharge","Charge","Storage"]
     yn=["No","Yes"]
     value_collection['STAT']=STAT_proto()
@@ -161,19 +170,9 @@ if __name__ == "__main__":
 
     serial_port = args.port
 
-    # Victron packages
-    sys.path.insert(1, os.path.join(os.path.dirname(__file__), './ext/velib_python'))
-    from vedbus import VeDbusService
-
-
-    from dbus.mainloop.glib import DBusGMainLoop
-    DBusGMainLoop(set_as_default=True)
-
-    dbusservice = VeDbusService(driver['connection'])
-
     # Create the management objects, as specified in the ccgx dbus-api document
     dbusservice.add_path('/Mgmt/ProcessName', __file__)
-    dbusservice.add_path('/Mgmt/ProcessVersion', 'Python ' + platform.python_version())
+    dbusservice.add_path('/Mgmt/ProcessVersion', driver['version'])
     dbusservice.add_path('/Mgmt/Connection', driver['connection'])
 
     # Create the mandatory objects
