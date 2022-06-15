@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import argparse, os, platform, serial, signal, time
+import argparse, os, platform, serial, signal, sys, time
 from datetime import datetime as dt
 
 os.environ['TZ'] = 'UTC'
@@ -129,10 +129,10 @@ def main():
                 dbusservice[f"/Info/Temp/Sensor{myparts[1]*2+1}"]=f'{value_collection["MODULES"][str(myparts[1])].posTempC} C'
                 dbusservice[f"/Raw/Info/Temp/Sensor{myparts[1]*2+1}"]=value_collection["MODULES"][str(myparts[1])].posTempC
                 for cellid in range(6):
-                    dbusservice[f"/Voltages/Cell{myparts[1]}.{cellid}"]=f'{value_collection["MODULES"][str(myparts[1])].cellVdc[cellid]} V'
-                    dbusservice[f"/Raw/Voltages/Cell{myparts[1]}.{cellid}"]=value_collection["MODULES"][str(myparts[1])].cellVdc[cellid]
-                    dbusservice[f"/Balancing/Cell{myparts[1]}.{cellid}"]=f'{yn[value_collection["MODULES"][str(myparts[1])].cellBal[cellid]]}'
-                    dbusservice[f"/Raw/Balancing/Cell{myparts[1]}.{cellid}"]=value_collection["MODULES"][str(myparts[1])].cellBal[cellid]
+                    dbusservice[f"/Voltages/Cell{myparts[1]}_{cellid}"]=f'{value_collection["MODULES"][str(myparts[1])].cellVdc[cellid]} V'
+                    dbusservice[f"/Raw/Voltages/Cell{myparts[1]}_{cellid}"]=value_collection["MODULES"][str(myparts[1])].cellVdc[cellid]
+                    dbusservice[f"/Balancing/Cell{myparts[1]}_{cellid}"]=f'{yn[value_collection["MODULES"][str(myparts[1])].cellBal[cellid]]}'
+                    dbusservice[f"/Raw/Balancing/Cell{myparts[1]}_{cellid}"]=value_collection["MODULES"][str(myparts[1])].cellBal[cellid]
 
 
     mainLoop()
@@ -191,10 +191,10 @@ if __name__ == "__main__":
 
     for moduleid in range(4):
         for cellid in range(6):
-            dbusservice.add_path(f'/Voltages/Cell{moduleid}.{cellid}',      -1)
-            dbusservice.add_path(f'/Raw/Voltages/Cell{moduleid}.{cellid}',  -1)
-            dbusservice.add_path(f'/Balancing/Cell{moduleid}.{cellid}',     -1)
-            dbusservice.add_path(f'/Raw/Balancing/Cell{moduleid}.{cellid}', -1)
+            dbusservice.add_path(f'/Voltages/Cell{moduleid}_{cellid}',      -1)
+            dbusservice.add_path(f'/Raw/Voltages/Cell{moduleid}_{cellid}',  -1)
+            dbusservice.add_path(f'/Balancing/Cell{moduleid}_{cellid}',     -1)
+            dbusservice.add_path(f'/Raw/Balancing/Cell{moduleid}_{cellid}', -1)
         dbusservice.add_path(f'/Voltages/Sum{moduleid}',                  -1)
         dbusservice.add_path(f'/Raw/Voltages/Sum{moduleid}',              -1)
 
