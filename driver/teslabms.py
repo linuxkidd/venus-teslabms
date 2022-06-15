@@ -131,10 +131,10 @@ def main():
 
                 dbusservice[f"/Voltages/Sum{myparts[1]}"]=f'{value_collection["MODULES"][str(myparts[1])].moduleVdc} V'
                 dbusservice[f"/Raw/Voltages/Sum{myparts[1]}"]=value_collection["MODULES"][str(myparts[1])].moduleVdc
-                dbusservice[f"/Info/Temp/Sensor{myparts[1]*2}"]=f'{value_collection["MODULES"][str(myparts[1])].negTempC} C'
-                dbusservice[f"/Raw/Info/Temp/Sensor{myparts[1]*2}"]=value_collection["MODULES"][str(myparts[1])].negTempC
-                dbusservice[f"/Info/Temp/Sensor{myparts[1]*2+1}"]=f'{value_collection["MODULES"][str(myparts[1])].posTempC} C'
-                dbusservice[f"/Raw/Info/Temp/Sensor{myparts[1]*2+1}"]=value_collection["MODULES"][str(myparts[1])].posTempC
+                dbusservice[f"/Info/Temp/Sensor{myparts[1]*2-1}"]=f'{value_collection["MODULES"][str(myparts[1])].negTempC} C'
+                dbusservice[f"/Raw/Info/Temp/Sensor{myparts[1]*2-1}"]=value_collection["MODULES"][str(myparts[1])].negTempC
+                dbusservice[f"/Info/Temp/Sensor{myparts[1]*2}"]=f'{value_collection["MODULES"][str(myparts[1])].posTempC} C'
+                dbusservice[f"/Raw/Info/Temp/Sensor{myparts[1]*2}"]=value_collection["MODULES"][str(myparts[1])].posTempC
                 for cellid in range(6):
                     dbusservice[f"/Voltages/Cell{myparts[1]}_{cellidi+1}"]=f'{value_collection["MODULES"][str(myparts[1])].cellVdc[cellid]} V'
                     dbusservice[f"/Raw/Voltages/Cell{myparts[1]}_{cellid+1}"]=value_collection["MODULES"][str(myparts[1])].cellVdc[cellid]
