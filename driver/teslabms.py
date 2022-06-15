@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import argparse, os, platform, serial, signal, sys, time
+import argparse, os, platform, re, serial, signal, sys, time
 from datetime import datetime as dt
 
 os.environ['TZ'] = 'UTC'
