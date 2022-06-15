@@ -189,7 +189,7 @@ if __name__ == "__main__":
     dbusservice.add_path('/Info/UpdateTimestamp',          -1)
     dbusservice.add_path('/Raw/Info/UpdateTimestamp',      -1)
 
-    for moduleid in range(1,4):
+    for moduleid in range(1,5):
         for cellid in range(1,7):
             dbusservice.add_path(f'/Voltages/Cell{moduleid}_{cellid}',      -1)
             dbusservice.add_path(f'/Raw/Voltages/Cell{moduleid}_{cellid}',  -1)
