@@ -109,6 +109,13 @@ def main():
                 dbusservice["/Raw/Voltages/Sum"]=value_collection['STAT'].packVdc
                 dbusservice["/Voltages/UpdateTimestamp"]=dt.now().strftime('%a %d.%m.%Y %H:%M:%S')
                 dbusservice["/Raw/Voltages/UpdateTimestamp"]=time.time()
+                dbusservice['/Dc/0/Voltage']=value_collection['STAT'].packVdc
+                dbusservice['/Dc/0/Current']=0
+                dbusservice['/Dc/0/Power']=0
+                dbusservice['/Dc/0/Temperature']=value_collection['STAT'].avgTempC
+                dbusservice['/Soc']=((value_collection['STAT'].packVdc-18)/(25.2-18))*100
+                dbusservice['/TimeToGo']=0
+
             elif myparts[0] == "SHUNT":
                 if("SHUNT" not in value_collection):
                     value_collection["SHUNT"]=SHUNT_proto()
@@ -187,6 +194,13 @@ if __name__ == "__main__":
 
 
     # Create the Tesla BMS paths
+    dbusservice.add_path('/Dc/0/Voltage',     -1)
+    dbusservice.add_path('/Dc/0/Current',     -1)
+    dbusservice.add_path('/Dc/0/Power',       -1)
+    dbusservice.add_path('/Dc/0/Temperature', -1)
+    dbusservice.add_path('/Soc',               0)
+    dbusservice.add_path('/TimeToGo',         -1)
+
     dbusservice.add_path('/Info/Soc',                      -1)
     dbusservice.add_path('/Raw/Info/Soc',                  -1)
     for sensorid in range(1,9):
