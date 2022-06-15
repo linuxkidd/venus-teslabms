@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import argparse, dbus, os, platform, re, serial, signal, sys, time
+import argparse, os, platform, re, serial, signal, sys, time
 from datetime import datetime as dt
 from dbus.mainloop.glib import DBusGMainLoop
 
@@ -89,6 +89,23 @@ def main():
     yn=["No","Yes"]
     value_collection['STAT']=STAT_proto()
 
+    def refreshDevice():
+        # Create the mandatory objects
+        dbusservice['/DeviceInstance'] =   driver['instance']
+        dbusservice['/ProductId'] =        driver['id']
+        dbusservice['/ProductName'] =      driver['name']
+        dbusservice['/HardwareVersion'] =  driver['version']
+        dbusservice['/Serial'] =           driver['serial']
+        dbusservice['/Connected'] =        1
+
+        # Create device list
+        dbusservice['/Devices/0/DeviceInstance'] =   driver['instance']
+        dbusservice['/Devices/0/FirmwareVersion'] =  driver['version']
+        dbusservice['/Devices/0/ProductId'] =        driver['id']
+        dbusservice['/Devices/0/ProductName'] =      driver['name']
+        dbusservice['/Devices/0/ServiceName'] =      driver['servicename']
+        dbusservice['/Devices/0/VregLink'] =         "(API)"
+
     def openPort(serial_port):
         try:
             ser = serial.Serial(serial_port,115200)
@@ -122,6 +139,7 @@ def main():
                 dbusservice['/Dc/0/Temperature']=value_collection['STAT'].avgTempC
                 dbusservice['/Soc']=((value_collection['STAT'].packVdc-18)/(25.2-18))*100
                 dbusservice['/TimeToGo']=0
+                refreshDevice()
 
             elif myparts[0] == "SHUNT":
                 if("SHUNT" not in value_collection):
@@ -179,7 +197,6 @@ if __name__ == "__main__":
     dbusservice.add_path('/DeviceInstance',  driver['instance'])
     dbusservice.add_path('/ProductId',       driver['id'])
     dbusservice.add_path('/ProductName',     driver['name'])
-    dbusservice.add_path('/FirmwareVersion', driver['version'])
     dbusservice.add_path('/HardwareVersion', driver['version'])
     dbusservice.add_path('/Serial',          driver['serial'])
     dbusservice.add_path('/Connected',       1)
