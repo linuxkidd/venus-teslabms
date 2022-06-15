@@ -155,7 +155,7 @@ def main():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--port", default = "/dev/ttyACM0", help="commuications port descriptor, e.g /dev/ttyACM0 or COM1")
-    parser.add_argument("-d", "--debug", type=store_true, help="Set to show debug output")
+    parser.add_argument("-d", "--debug", action=store_true, help="Set to show debug output")
 
     args = parser.parse_args()
 
