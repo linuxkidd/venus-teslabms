@@ -170,10 +170,10 @@ def main():
                 dbusservice[f"/Raw/Voltages/Cell{myparts[1]}_{cellid+1}"]=value_collection["MODULES"][str(myparts[1])].cellVdc[cellid]
                 dbusservice[f"/Balancing/Cell{myparts[1]}_{cellid+1}"]=f'{yn[value_collection["MODULES"][str(myparts[1])].cellBal[cellid]]}'
                 dbusservice[f"/Raw/Balancing/Cell{myparts[1]}_{cellid+1}"]=value_collection["MODULES"][str(myparts[1])].cellBal[cellid]
-        gobject.timeout_add(1000,handle_serial_data)
+        gobject.timeout_add(50,handle_serial_data)
 
     def mainLoop():
-        gobject.timeout_add(1000,handle_serial_data)
+        gobject.timeout_add(50,handle_serial_data)
         mainloop = gobject.MainLoop()
         mainloop.run()
 
