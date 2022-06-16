@@ -287,12 +287,12 @@ if __name__ == "__main__":
 
 
     # Create the Tesla BMS paths
-    dbusservice.add_path('/Dc/0/Voltage',     -1)
-    dbusservice.add_path('/Dc/0/Current',     -1)
-    dbusservice.add_path('/Dc/0/Power',       -1)
-    dbusservice.add_path('/Dc/0/Temperature', -1)
+    dbusservice.add_path('/Dc/0/Voltage',      0)
+    dbusservice.add_path('/Dc/0/Current',      0)
+    dbusservice.add_path('/Dc/0/Power',        0)
+    dbusservice.add_path('/Dc/0/Temperature',  0)
     dbusservice.add_path('/Soc',               0)
-    dbusservice.add_path('/TimeToGo',         -1)
+    dbusservice.add_path('/TimeToGo',          0)
 
     dbusservice.add_path('/Info/Soc',                      -1)
     dbusservice.add_path('/Raw/Info/Soc',                  -1)
