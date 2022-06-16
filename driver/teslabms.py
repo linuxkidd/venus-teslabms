@@ -163,8 +163,13 @@ def main():
             minCellTemp = min(value_collection["MODULES"][str(moduleID)].negTempC, minCellTemp)
             maxCellTemp = max(value_collection["MODULES"][str(moduleID)].posTempC, maxCellTemp)
             maxCellTemp = max(value_collection["MODULES"][str(moduleID)].negTempC, maxCellTemp)
-            minCellVolt = min(value_collection["MODULES"][str(moduleID)].cellVdc,  minCellVolt)
-            maxCellVolt = min(value_collection["MODULES"][str(moduleID)].cellVdc,  maxCellVolt)
+            minVoltList = value_collection["MODULES"][str(moduleID)].cellVdc.copy()
+            maxVoltList = value_collection["MODULES"][str(moduleID)].cellVdc.copy()
+            minVoltList.append(minCellVolt)
+            maxVoltList.append(maxCellVolt)
+            minCellVolt = min(minVoltList)
+            maxCellVolt = min(maxVoltList)
+
         dbusservice["/System/MinCellVoltage"] = minCellVolt
         dbusservice["/System/MaxCellVoltage"] = maxCellVolt
         dbusservice["/System/MinCellTemperature"] = minCellTemp
