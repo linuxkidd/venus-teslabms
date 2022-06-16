@@ -115,6 +115,61 @@ def main():
             print('Error: Failed to open communications port, exiting')
             exit()
 
+    def dbusPublishShunt():
+        dbusservice["/Info/Current"]=f"{value_collection['STAT'].current} A"
+        dbusservice["/Raw/Info/Current"]=value_collection['STAT'].current
+        current_mode_id=2
+        if value_collection['STAT'].current>0:
+            current_mode_id=0
+        elif value_collection['STAT'].current<0:
+            current_mode_id=1
+        dbusservice["/Info/CurrentMode"]=f"{current_mode[current_mode_id]} A"
+        dbusservice["/Raw/Info/CurrentMode"]=current_mode_id
+
+    def dbusPublishStat():
+        dbusservice["/Voltages/Sum"]=f"{value_collection['STAT'].packVdc} V"
+        dbusservice["/Raw/Voltages/Sum"]=value_collection['STAT'].packVdc
+        dbusservice["/Voltages/UpdateTimestamp"]=dt.now().strftime('%a %d.%m.%Y %H:%M:%S')
+        dbusservice["/Raw/Voltages/UpdateTimestamp"]=time.time()
+        dbusservice['/Dc/0/Voltage']=value_collection['STAT'].packVdc
+        dbusservice['/Dc/0/Current']=0
+        dbusservice['/Dc/0/Power']=0
+        dbusservice['/Dc/0/Temperature']=value_collection['STAT'].avgTempC
+        dbusservice['/Soc']=((value_collection['STAT'].packVdc-18)/(25.2-18))*100
+        dbusservice['/TimeToGo']=0
+
+    def dbusPublishModules(moduleID):
+        dbusservice[f"/Voltages/Sum{moduleID}"]=f'{value_collection["MODULES"][moduleID].moduleVdc} V'
+        dbusservice[f"/Raw/Voltages/Sum{moduleID}"]=value_collection["MODULES"][moduleID].moduleVdc
+        dbusservice[f"/Info/Temp/Sensor{moduleID*2-1}"]=f'{value_collection["MODULES"][moduleID].negTempC} C'
+        dbusservice[f"/Raw/Info/Temp/Sensor{moduleID*2-1}"]=value_collection["MODULES"][moduleID].negTempC
+        dbusservice[f"/Info/Temp/Sensor{moduleID*2}"]=f'{value_collection["MODULES"][moduleID].posTempC} C'
+        dbusservice[f"/Raw/Info/Temp/Sensor{moduleID*2}"]=value_collection["MODULES"][moduleID].posTempC
+        for cellid in range(6):
+            dbusservice[f"/Voltages/Cell{moduleID}_{cellid+1}"]=f'{value_collection["MODULES"][moduleID].cellVdc[cellid]} V'
+            dbusservice[f"/Raw/Voltages/Cell{moduleID}_{cellid+1}"]=value_collection["MODULES"][moduleID].cellVdc[cellid]
+            dbusservice[f"/Balancing/Cell{moduleID}_{cellid+1}"]=f'{yn[value_collection["MODULES"][moduleID].cellBal[cellid]]}'
+            dbusservice[f"/Raw/Balancing/Cell{moduleID}_{cellid+1}"]=value_collection["MODULES"][moduleID].cellBal[cellid]
+        if moduleID=="4":
+            dbusPublishMinMax()
+
+    def dbusPublishMinMax():
+        minCellVolt = 99
+        maxCellVolt = 0
+        minCellTemp = 9999
+        maxCellTemp = -999
+        for moduleID in range(1,5):
+            minCellTemp = min(value_collection["MODULES"][moduleID].posTempC, minCellTemp)
+            minCellTemp = min(value_collection["MODULES"][moduleID].negTempC, minCellTemp)
+            maxCellTemp = max(value_collection["MODULES"][moduleID].posTempC, maxCellTemp)
+            maxCellTemp = max(value_collection["MODULES"][moduleID].negTempC, maxCellTemp)
+            minCellVolt = min(value_collection["MODULES"][moduleID].cellVdc,  minCellVolt)
+            maxCellVolt = min(value_collection["MODULES"][moduleID].cellVdc,  maxCellVolt)
+        dbusservice["/System/MinCellVoltage"] = minCellVolt
+        dbusservice["/System/MaxCellVoltage"] = maxCellVolt
+        dbusservice["/System/MinCellTemperature"] = minCellTemp
+        dbusservice["/System/MaxCellTemperature"] = maxCellTemp
+
     def handle_serial_data():
         myline=ser.readline()
         myparts=myline.decode('ascii').rstrip().split(',')
@@ -127,49 +182,22 @@ def main():
             print(myparts)
         if myparts[0]=="STAT":
             value_collection['STAT'].decode(myparts)
-            dbusservice["/Voltages/Sum"]=f"{value_collection['STAT'].packVdc} V"
-            dbusservice["/Raw/Voltages/Sum"]=value_collection['STAT'].packVdc
-            dbusservice["/Voltages/UpdateTimestamp"]=dt.now().strftime('%a %d.%m.%Y %H:%M:%S')
-            dbusservice["/Raw/Voltages/UpdateTimestamp"]=time.time()
-            dbusservice['/Dc/0/Voltage']=value_collection['STAT'].packVdc
-            dbusservice['/Dc/0/Current']=0
-            dbusservice['/Dc/0/Power']=0
-            dbusservice['/Dc/0/Temperature']=value_collection['STAT'].avgTempC
-            dbusservice['/Soc']=((value_collection['STAT'].packVdc-18)/(25.2-18))*100
-            dbusservice['/TimeToGo']=0
-            refreshDevice()
+            dbusPublishStat()
 
         elif myparts[0] == "SHUNT":
             if("SHUNT" not in value_collection):
                 value_collection["SHUNT"]=SHUNT_proto()
             value_collection["SHUNT"].decode(myparts)
-            dbusservice["/Info/Current"]=f"{value_collection['STAT'].current} A"
-            dbusservice["/Raw/Info/Current"]=value_collection['STAT'].current
-            current_mode_id=2
-            if value_collection['STAT'].current>0:
-                current_mode_id=0
-            elif value_collection['STAT'].current<0:
-                current_mode_id=1
-            dbusservice["/Info/CurrentMode"]=f"{current_mode[current_mode_id]} A"
-            dbusservice["/Raw/Info/CurrentMode"]=current_mode_id
+            dbusPublishShunt()
+
         elif myparts[0]=="Module":
             if("MODULES" not in value_collection):
                 value_collection["MODULES"]={}
             if str(myparts[1]) not in value_collection["MODULES"]:
                 value_collection["MODULES"][str(myparts[1])]=MODULE_proto()
             value_collection["MODULES"][str(myparts[1])].decode(myparts)
+            dbusPublishModules(str(myparts[1]))
 
-            dbusservice[f"/Voltages/Sum{myparts[1]}"]=f'{value_collection["MODULES"][str(myparts[1])].moduleVdc} V'
-            dbusservice[f"/Raw/Voltages/Sum{myparts[1]}"]=value_collection["MODULES"][str(myparts[1])].moduleVdc
-            dbusservice[f"/Info/Temp/Sensor{myparts[1]*2-1}"]=f'{value_collection["MODULES"][str(myparts[1])].negTempC} C'
-            dbusservice[f"/Raw/Info/Temp/Sensor{myparts[1]*2-1}"]=value_collection["MODULES"][str(myparts[1])].negTempC
-            dbusservice[f"/Info/Temp/Sensor{myparts[1]*2}"]=f'{value_collection["MODULES"][str(myparts[1])].posTempC} C'
-            dbusservice[f"/Raw/Info/Temp/Sensor{myparts[1]*2}"]=value_collection["MODULES"][str(myparts[1])].posTempC
-            for cellid in range(6):
-                dbusservice[f"/Voltages/Cell{myparts[1]}_{cellid+1}"]=f'{value_collection["MODULES"][str(myparts[1])].cellVdc[cellid]} V'
-                dbusservice[f"/Raw/Voltages/Cell{myparts[1]}_{cellid+1}"]=value_collection["MODULES"][str(myparts[1])].cellVdc[cellid]
-                dbusservice[f"/Balancing/Cell{myparts[1]}_{cellid+1}"]=f'{yn[value_collection["MODULES"][str(myparts[1])].cellBal[cellid]]}'
-                dbusservice[f"/Raw/Balancing/Cell{myparts[1]}_{cellid+1}"]=value_collection["MODULES"][str(myparts[1])].cellBal[cellid]
         gobject.timeout_add(50,handle_serial_data)
 
     def mainLoop():
@@ -222,8 +250,13 @@ if __name__ == "__main__":
     dbusservice.add_path('/System/BatteriesParallel',   4)
     dbusservice.add_path('/System/BatteriesSeries',     1)
     dbusservice.add_path('/System/NrOfCellsPerBattery', 6)
-    dbusservice.add_path('/System/MinCellVoltage',    3.0)
-    dbusservice.add_path('/System/MaxCellVoltage',    4.2)
+    dbusservice.add_path('/System/MinCellVoltage',     -1)
+    dbusservice.add_path('/System/MaxCellVoltage',     -1)
+    dbusservice.add_path('/System/MinCellTemperature', -1)
+    dbusservice.add_path('/System/MaxCellTemperature', -1)
+    dbusservice.add_path('/Io/AllowToCharge',           1)
+    dbusservice.add_path('/Io/AllowToDischarge',        1)
+
 
     # Create the Tesla BMS paths
     dbusservice.add_path('/Dc/0/Voltage',     -1)
