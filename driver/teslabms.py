@@ -120,6 +120,7 @@ def main():
         dbusservice["/Voltages/UpdateTimestamp"]=dt.now().strftime('%a %d.%m.%Y %H:%M:%S')
         dbusservice["/Raw/Voltages/UpdateTimestamp"]=time.time()
         dbusservice['/Dc/0/Voltage']=value_collection['STAT'].packVdc
+        dbusservice['/Info/Dc/0/Voltage']=f"{value_collection['STAT'].packVdc} V"
         try:
             power = round(value_collection['SHUNT'].current * value_collection['STAT'].packVdc * 10)/10
         except:
