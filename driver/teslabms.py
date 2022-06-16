@@ -318,8 +318,6 @@ if __name__ == "__main__":
 
     dbusservice.add_path('/Info/Soc',                      "0 %")
     dbusservice.add_path('/Raw/Info/Soc',                  0)
-        dbusservice.add_path(f'/Info/Temp/Sensor{sensorid}',     -1)
-        dbusservice.add_path(f'/Raw/Info/Temp/Sensor{sensorid}', -1)
 
     dbusservice.add_path('/Info/UpdateTimestamp',          -1)
     dbusservice.add_path('/Raw/Info/UpdateTimestamp',      -1)
