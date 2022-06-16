@@ -129,16 +129,20 @@ def main():
     def dbusPublishStat():
         dbusservice["/Voltages/Sum"]=f"{value_collection['STAT'].packVdc} V"
         dbusservice["/Raw/Voltages/Sum"]=value_collection['STAT'].packVdc
+        if value_collection['STAT'].packVdc < 20.0:
+            dbusservice["/Info/ChargeRequest"] = 1
+        elif value_collection['STAT'].packVdc > 20.5:
+            dbusservice["/Info/ChargeRequest"] = 0
         dbusservice["/Voltages/UpdateTimestamp"]=dt.now().strftime('%a %d.%m.%Y %H:%M:%S')
         dbusservice["/Raw/Voltages/UpdateTimestamp"]=time.time()
         dbusservice['/Dc/0/Voltage']=value_collection['STAT'].packVdc
         dbusservice['/Dc/0/Current']=0
         dbusservice['/Dc/0/Power']=0
         dbusservice['/Dc/0/Temperature']=value_collection['STAT'].avgTempC
-        dbusservice['/Soc']=((value_collection['STAT'].packVdc-18)/(25.2-18))*100
-        dbusservice['/Info/Soc']=f"{((value_collection['STAT'].packVdc-18)/(25.2-18))*100} %"
-        dbusservice['/Raw/Info/Soc']=((value_collection['STAT'].packVdc-18)/(25.2-18))*100
-
+        Soc=Math.round(((value_collection['STAT'].packVdc-19.6)/(25.2-19.6))*10000)/100
+        dbusservice['/Soc']=Soc
+        dbusservice['/Info/Soc']=f"{Soc} %"
+        dbusservice['/Raw/Info/Soc']=Soc
         dbusservice['/TimeToGo']=0
 
     def dbusPublishModules(moduleID):
@@ -159,6 +163,7 @@ def main():
             dbusPublishMinMax()
 
     def dbusPublishMinMax():
+        balCellCount = 0
         minCellVolt = 99
         maxCellVolt = 0
         minCellTemp = 9999
@@ -174,11 +179,21 @@ def main():
             maxVoltList.append(maxCellVolt)
             minCellVolt = min(minVoltList)
             maxCellVolt = min(maxVoltList)
+            balCellCount = balCellCount + sum(value_collection["MODULES"][str(moduleID)].cellBal)
 
         dbusservice["/System/MinCellVoltage"] = minCellVolt
         dbusservice["/System/MaxCellVoltage"] = maxCellVolt
+        dbusservice["/Raw/Voltages/Min"] = minCellVolt
+        dbusservice["/Raw/Voltages/Max"] = maxCellVolt
+        dbusservice["/Raw/Voltages/Diff"] = maxCellVolt - minCellVolt
+        dbusservice["/Voltages/Min"] = f"{minCellVolt} V"
+        dbusservice["/Voltages/Max"] = f"{maxCellVolt} V"
+        dbusservice["/Voltages/Diff"] = f"{maxCellVolt - minCellVolt} dV"
+
         dbusservice["/System/MinCellTemperature"] = minCellTemp
         dbusservice["/System/MaxCellTemperature"] = maxCellTemp
+        dbusservice["/Info/Balancing/CellsBalancingCount"] = balCellCount
+        dbusservice["/Raw/Balancing/CellsBalancingCount"] = balCellCount
 
     def handle_serial_data():
         myline=ser.readline()
@@ -297,6 +312,11 @@ if __name__ == "__main__":
     dbusservice.add_path(f'/Info/Balancing/CellsBalancingCount', -1)
     dbusservice.add_path(f'/Raw/Balancing/CellsBalancingCount',  -1)
 
+    dbusservice.add_path('/Info/ChargeRequest',             0)
+    dbusservice.add_path('/Info/MaxChargeCurrent',        800)
+    dbusservice.add_path('/Info/MaxDischargeCurrent',     800)
+    dbusservice.add_path('/Info/MaxChargeVoltage',       25.2)
+    dbusservice.add_path('/Info/BatteryLowVoltage',      19.6)
     dbusservice.add_path('/Info/CurrentMode',              -1)
     dbusservice.add_path('/Raw/Info/CurrentMode',          -1)
     dbusservice.add_path('/Info/Current',                  -1)
