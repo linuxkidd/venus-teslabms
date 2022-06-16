@@ -136,6 +136,9 @@ def main():
         dbusservice['/Dc/0/Power']=0
         dbusservice['/Dc/0/Temperature']=value_collection['STAT'].avgTempC
         dbusservice['/Soc']=((value_collection['STAT'].packVdc-18)/(25.2-18))*100
+        dbusservice['/Info/Soc']=f"{((value_collection['STAT'].packVdc-18)/(25.2-18))*100} %"
+        dbusservice['/Raw/Info/Soc']=((value_collection['STAT'].packVdc-18)/(25.2-18))*100
+
         dbusservice['/TimeToGo']=0
 
     def dbusPublishModules(moduleID):
