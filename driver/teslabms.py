@@ -139,18 +139,18 @@ def main():
         dbusservice['/TimeToGo']=0
 
     def dbusPublishModules(moduleID):
-        dbusservice[f"/Voltages/Sum{moduleID}"]=f'{value_collection["MODULES"][moduleID].moduleVdc} V'
-        dbusservice[f"/Raw/Voltages/Sum{moduleID}"]=value_collection["MODULES"][moduleID].moduleVdc
-        dbusservice[f"/Info/Temp/Sensor{moduleID*2-1}"]=f'{value_collection["MODULES"][moduleID].negTempC} C'
-        dbusservice[f"/Raw/Info/Temp/Sensor{moduleID*2-1}"]=value_collection["MODULES"][moduleID].negTempC
-        dbusservice[f"/Info/Temp/Sensor{moduleID*2}"]=f'{value_collection["MODULES"][moduleID].posTempC} C'
-        dbusservice[f"/Raw/Info/Temp/Sensor{moduleID*2}"]=value_collection["MODULES"][moduleID].posTempC
+        dbusservice[f"/Voltages/Sum{moduleID}"]=f'{value_collection["MODULES"][str(moduleID)].moduleVdc} V'
+        dbusservice[f"/Raw/Voltages/Sum{moduleID}"]=value_collection["MODULES"][str(moduleID)].moduleVdc
+        dbusservice[f"/Info/Temp/Sensor{moduleID*2-1}"]=f'{value_collection["MODULES"][str(moduleID)].negTempC} C'
+        dbusservice[f"/Raw/Info/Temp/Sensor{moduleID*2-1}"]=value_collection["MODULES"][str(moduleID)].negTempC
+        dbusservice[f"/Info/Temp/Sensor{moduleID*2}"]=f'{value_collection["MODULES"][str(moduleID)].posTempC} C'
+        dbusservice[f"/Raw/Info/Temp/Sensor{moduleID*2}"]=value_collection["MODULES"][str(moduleID)].posTempC
         for cellid in range(6):
-            dbusservice[f"/Voltages/Cell{moduleID}_{cellid+1}"]=f'{value_collection["MODULES"][moduleID].cellVdc[cellid]} V'
-            dbusservice[f"/Raw/Voltages/Cell{moduleID}_{cellid+1}"]=value_collection["MODULES"][moduleID].cellVdc[cellid]
-            dbusservice[f"/Balancing/Cell{moduleID}_{cellid+1}"]=f'{yn[value_collection["MODULES"][moduleID].cellBal[cellid]]}'
-            dbusservice[f"/Raw/Balancing/Cell{moduleID}_{cellid+1}"]=value_collection["MODULES"][moduleID].cellBal[cellid]
-        if moduleID=="4":
+            dbusservice[f"/Voltages/Cell{moduleID}_{cellid+1}"]=f'{value_collection["MODULES"][str(moduleID)].cellVdc[cellid]} V'
+            dbusservice[f"/Raw/Voltages/Cell{moduleID}_{cellid+1}"]=value_collection["MODULES"][str(moduleID)].cellVdc[cellid]
+            dbusservice[f"/Balancing/Cell{moduleID}_{cellid+1}"]=f'{yn[value_collection["MODULES"][str(moduleID)].cellBal[cellid]]}'
+            dbusservice[f"/Raw/Balancing/Cell{moduleID}_{cellid+1}"]=value_collection["MODULES"][str(moduleID)].cellBal[cellid]
+        if moduleID==4:
             dbusPublishMinMax()
 
     def dbusPublishMinMax():
@@ -196,7 +196,7 @@ def main():
             if str(myparts[1]) not in value_collection["MODULES"]:
                 value_collection["MODULES"][str(myparts[1])]=MODULE_proto()
             value_collection["MODULES"][str(myparts[1])].decode(myparts)
-            dbusPublishModules(str(myparts[1]))
+            dbusPublishModules(myparts[1])
 
         gobject.timeout_add(50,handle_serial_data)
 
