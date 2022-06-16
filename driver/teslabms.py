@@ -159,12 +159,12 @@ def main():
         minCellTemp = 9999
         maxCellTemp = -999
         for moduleID in range(1,5):
-            minCellTemp = min(value_collection["MODULES"][moduleID].posTempC, minCellTemp)
-            minCellTemp = min(value_collection["MODULES"][moduleID].negTempC, minCellTemp)
-            maxCellTemp = max(value_collection["MODULES"][moduleID].posTempC, maxCellTemp)
-            maxCellTemp = max(value_collection["MODULES"][moduleID].negTempC, maxCellTemp)
-            minCellVolt = min(value_collection["MODULES"][moduleID].cellVdc,  minCellVolt)
-            maxCellVolt = min(value_collection["MODULES"][moduleID].cellVdc,  maxCellVolt)
+            minCellTemp = min(value_collection["MODULES"][str(moduleID)].posTempC, minCellTemp)
+            minCellTemp = min(value_collection["MODULES"][str(moduleID)].negTempC, minCellTemp)
+            maxCellTemp = max(value_collection["MODULES"][str(moduleID)].posTempC, maxCellTemp)
+            maxCellTemp = max(value_collection["MODULES"][str(moduleID)].negTempC, maxCellTemp)
+            minCellVolt = min(value_collection["MODULES"][str(moduleID)].cellVdc,  minCellVolt)
+            maxCellVolt = min(value_collection["MODULES"][str(moduleID)].cellVdc,  maxCellVolt)
         dbusservice["/System/MinCellVoltage"] = minCellVolt
         dbusservice["/System/MaxCellVoltage"] = maxCellVolt
         dbusservice["/System/MinCellTemperature"] = minCellTemp
