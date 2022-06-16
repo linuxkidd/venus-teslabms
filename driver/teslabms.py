@@ -139,7 +139,7 @@ def main():
         dbusservice['/Dc/0/Current']=0
         dbusservice['/Dc/0/Power']=0
         dbusservice['/Dc/0/Temperature']=value_collection['STAT'].avgTempC
-        Soc=Math.round(((value_collection['STAT'].packVdc-19.6)/(25.2-19.6))*10000)/100
+        Soc = round(((value_collection['STAT'].packVdc-19.6)/(25.2-19.6))*10000)/100
         dbusservice['/Soc']=Soc
         dbusservice['/Info/Soc']=f"{Soc} %"
         dbusservice['/Raw/Info/Soc']=Soc
