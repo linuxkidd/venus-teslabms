@@ -178,7 +178,7 @@ def main():
             minVoltList.append(minCellVolt)
             maxVoltList.append(maxCellVolt)
             minCellVolt = min(minVoltList)
-            maxCellVolt = min(maxVoltList)
+            maxCellVolt = max(maxVoltList)
             balCellCount = balCellCount + sum(value_collection["MODULES"][str(moduleID)].cellBal)
 
         dbusservice["/System/MinCellVoltage"] = minCellVolt
