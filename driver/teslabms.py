@@ -116,13 +116,13 @@ def main():
             exit()
 
     def dbusPublishShunt():
-        dbusservice["/Info/Current"]=f"{value_collection['STAT'].current} A"
-        dbusservice["/Raw/Info/Current"]=value_collection['STAT'].current
-        dbusservice['/Dc/0/Current']=value_collection['STAT'].current
+        dbusservice["/Info/Current"]=f"{value_collection['SHUNT'].current} A"
+        dbusservice["/Raw/Info/Current"]=value_collection['SHUNT'].current
+        dbusservice['/Dc/0/Current']=value_collection['SHUNT'].current
         current_mode_id=2
-        if value_collection['STAT'].current>0:
+        if value_collection['SHUNT'].current>0:
             current_mode_id=0
-        elif value_collection['STAT'].current<0:
+        elif value_collection['SHUNT'].current<0:
             current_mode_id=1
         dbusservice["/Info/CurrentMode"]=f"{current_mode[current_mode_id]} A"
         dbusservice["/Raw/Info/CurrentMode"]=current_mode_id
@@ -137,7 +137,10 @@ def main():
         dbusservice["/Voltages/UpdateTimestamp"]=dt.now().strftime('%a %d.%m.%Y %H:%M:%S')
         dbusservice["/Raw/Voltages/UpdateTimestamp"]=time.time()
         dbusservice['/Dc/0/Voltage']=value_collection['STAT'].packVdc
-        dbusservice['/Dc/0/Power']=round(value_collection['STAT'].current * value_collection['STAT'].packVdc * 10)/10
+        try:
+            dbusservice['/Dc/0/Power']=round(value_collection['SHUNT'].current * value_collection['STAT'].packVdc * 10)/10
+        except:
+            dbusservice['/Dc/0/Power']=0
         dbusservice['/Dc/0/Temperature']=value_collection['STAT'].avgTempC
         Soc = round(((value_collection['STAT'].packVdc-19.6)/(25.2-19.6))*10000)/100
         dbusservice['/Soc']=Soc
