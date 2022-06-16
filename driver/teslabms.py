@@ -129,6 +129,8 @@ def main():
         dbusservice['/Info/Dc/0/Power'] = f"{power} W"
         dbusservice['/Dc/0/Temperature']=value_collection['STAT'].avgTempC
         Soc = round(((value_collection['STAT'].packVdc-19.6)/(25.2-19.6))*10000)/100
+        Capacity = round(Soc*20.8/10)/10
+        dbusservice['/Capacity']=Capacity
         dbusservice['/Soc']=Soc
         dbusservice['/Info/Soc']=f"{Soc} %"
         dbusservice['/Raw/Info/Soc']=Soc
@@ -137,10 +139,10 @@ def main():
     def dbusPublishModules(moduleID):
         dbusservice[f"/Voltages/Sum{moduleID}"]=f'{value_collection["MODULES"][str(moduleID)].moduleVdc} V'
         dbusservice[f"/Raw/Voltages/Sum{moduleID}"]=value_collection["MODULES"][str(moduleID)].moduleVdc
-        dbusservice[f"/Info/Temp/Sensor{moduleID*2-1}"]=f'{value_collection["MODULES"][str(moduleID)].negTempC} C'
-        dbusservice[f"/Raw/Info/Temp/Sensor{moduleID*2-1}"]=value_collection["MODULES"][str(moduleID)].negTempC
-        dbusservice[f"/Info/Temp/Sensor{moduleID*2}"]=f'{value_collection["MODULES"][str(moduleID)].posTempC} C'
-        dbusservice[f"/Raw/Info/Temp/Sensor{moduleID*2}"]=value_collection["MODULES"][str(moduleID)].posTempC
+        dbusservice[f"/Info/Temp/Sensor{moduleID}_0"]=f'{value_collection["MODULES"][str(moduleID)].negTempC} C'
+        dbusservice[f"/Raw/Info/Temp/Sensor{moduleID}_0"]=value_collection["MODULES"][str(moduleID)].negTempC
+        dbusservice[f"/Info/Temp/Sensor{moduleID}_1"]=f'{value_collection["MODULES"][str(moduleID)].posTempC} C'
+        dbusservice[f"/Raw/Info/Temp/Sensor{moduleID}_1"]=value_collection["MODULES"][str(moduleID)].posTempC
         dbusservice["/Info/UpdateTimestamp"]=dt.now().strftime('%a %d.%m.%Y %H:%M:%S')
         dbusservice["/Raw/Info/UpdateTimestamp"]=time.time()
         for cellid in range(6):
@@ -155,23 +157,39 @@ def main():
         balCellCount = 0
         minCellVolt = 99
         maxCellVolt = 0
+        minCellVoltId = ""
+        maxCellVoltId = ""
         minCellTemp = 9999
         maxCellTemp = -999
+        minCellTempId = ""
+        maxCellTempId = ""
         for moduleID in range(1,5):
-            minCellTemp = min(value_collection["MODULES"][str(moduleID)].posTempC, minCellTemp)
-            minCellTemp = min(value_collection["MODULES"][str(moduleID)].negTempC, minCellTemp)
-            maxCellTemp = max(value_collection["MODULES"][str(moduleID)].posTempC, maxCellTemp)
-            maxCellTemp = max(value_collection["MODULES"][str(moduleID)].negTempC, maxCellTemp)
-            minVoltList = value_collection["MODULES"][str(moduleID)].cellVdc.copy()
-            maxVoltList = value_collection["MODULES"][str(moduleID)].cellVdc.copy()
-            minVoltList.append(minCellVolt)
-            maxVoltList.append(maxCellVolt)
-            minCellVolt = min(minVoltList)
-            maxCellVolt = max(maxVoltList)
+            if value_collection["MODULES"][str(moduleID)].posTempC < minCellTemp:
+                minCellTemp = value_collection["MODULES"][str(moduleID)].posTempC
+                minCellTempId = f"{moduleID}"
+            if value_collection["MODULES"][str(moduleID)].negTempC < minCellTemp:
+                minCellTemp = value_collection["MODULES"][str(moduleID)].negTempC
+                minCellTempId = f"{moduleID}"
+            if value_collection["MODULES"][str(moduleID)].posTempC > maxCellTemp:
+                maxCellTemp = value_collection["MODULES"][str(moduleID)].posTempC
+                maxCellTempId = f"{moduleID}"
+            if value_collection["MODULES"][str(moduleID)].negTempC > maxCellTemp:
+                maxCellTemp = value_collection["MODULES"][str(moduleID)].negTempC
+                maxCellTempId = f"{moduleID}"
+
+            for cellID in range(6):
+                if value_collection["MODULES"][str(moduleID)].cellVdc[cellID] > maxCellVolt:
+                    maxCellVolt = value_collection["MODULES"][str(moduleID)].cellVdc[cellID]
+                    maxCellVoltId = f"{moduleID}.{cellID}"
+                if value_collection["MODULES"][str(moduleID)].cellVdc[cellID] < minCellVolt:
+                    minCellVolt = value_collection["MODULES"][str(moduleID)].cellVdc[cellID]
+                    minCellVoltId = f"{moduleID}.{cellID}"
             balCellCount = balCellCount + sum(value_collection["MODULES"][str(moduleID)].cellBal)
 
         dbusservice["/System/MinCellVoltage"] = minCellVolt
+        dbusservice["/System/MinVoltageCellId"] = minCellVoltId
         dbusservice["/System/MaxCellVoltage"] = maxCellVolt
+        dbusservice["/System/MaxVoltageCellId"] = maxCellVoltId
         dbusservice["/Raw/Voltages/Min"] = minCellVolt
         dbusservice["/Raw/Voltages/Max"] = maxCellVolt
         dbusservice["/Raw/Voltages/Diff"] = maxCellVolt - minCellVolt
@@ -180,7 +198,9 @@ def main():
         dbusservice["/Voltages/Diff"] = f"{maxCellVolt - minCellVolt} dV"
 
         dbusservice["/System/MinCellTemperature"] = minCellTemp
+        dbusservice["/System/MinTemperatureCellId"] = minCellTempId
         dbusservice["/System/MaxCellTemperature"] = maxCellTemp
+        dbusservice["/System/MaxTemperatureCellId"] = maxCellTempId
         dbusservice["/Info/Balancing/CellsBalancingCount"] = f"{balCellCount} Cells"
         dbusservice["/Raw/Balancing/CellsBalancingCount"] = balCellCount
 
@@ -268,6 +288,17 @@ if __name__ == "__main__":
     dbusservice.add_path('/System/MaxCellVoltage',     -1)
     dbusservice.add_path('/System/MinCellTemperature', -1)
     dbusservice.add_path('/System/MaxCellTemperature', -1)
+    dbusservice.add_path('/System/MinVoltageCellId',     "")
+    dbusservice.add_path('/System/MaxVoltageCellId',     "")
+    dbusservice.add_path('/System/MinTemperatureCellId', "")
+    dbusservice.add_path('/System/MaxTemperatureCellId', "")
+
+    dbusservice.add_path('/System/modulesOnline',  4)
+    dbusservice.add_path('/System/modulesOffline', 0)
+
+    dbusservice.add_path('/System/nrOfModulesBlockingCharge', 0)
+    dbusservice.add_path('/System/nrOfModulesBlockingDischarge', 0)
+
     dbusservice.add_path('/Io/AllowToCharge',           1)
     dbusservice.add_path('/Io/AllowToDischarge',        1)
 
@@ -287,7 +318,6 @@ if __name__ == "__main__":
 
     dbusservice.add_path('/Info/Soc',                      "0 %")
     dbusservice.add_path('/Raw/Info/Soc',                  0)
-    for sensorid in range(1,9):
         dbusservice.add_path(f'/Info/Temp/Sensor{sensorid}',     -1)
         dbusservice.add_path(f'/Raw/Info/Temp/Sensor{sensorid}', -1)
 
@@ -302,9 +332,16 @@ if __name__ == "__main__":
             dbusservice.add_path(f'/Raw/Balancing/Cell{moduleid}_{cellid}', -1)
         dbusservice.add_path(f'/Voltages/Sum{moduleid}',                  -1)
         dbusservice.add_path(f'/Raw/Voltages/Sum{moduleid}',              -1)
+        dbusservice.add_path(f'/Info/Temp/Sensor{moduleid}_0',     -1)
+        dbusservice.add_path(f'/Raw/Info/Temp/Sensor{moduleid}_0', -1)
+        dbusservice.add_path(f'/Info/Temp/Sensor{moduleid}_1',     -1)
+        dbusservice.add_path(f'/Raw/Info/Temp/Sensor{moduleid}_1', -1)
 
     dbusservice.add_path(f'/Info/Balancing/CellsBalancingCount', -1)
     dbusservice.add_path(f'/Raw/Balancing/CellsBalancingCount',  -1)
+
+    dbusservice.add_path('/System/installedCapacity', "20.8 kWh")
+    dbusservice.add_path('/Capacity',  0.0)
 
     dbusservice.add_path('/Info/ChargeRequest',             0)
     dbusservice.add_path('/Info/MaxChargeCurrent',        800)
