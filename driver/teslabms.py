@@ -90,23 +90,6 @@ def main():
     yn=["No","Yes"]
     value_collection['STAT']=STAT_proto()
 
-    def refreshDevice():
-        # Create the mandatory objects
-        dbusservice['/DeviceInstance'] =   driver['instance']
-        dbusservice['/ProductId'] =        driver['id']
-        dbusservice['/ProductName'] =      driver['name']
-        dbusservice['/HardwareVersion'] =  driver['version']
-        dbusservice['/Serial'] =           driver['serial']
-        dbusservice['/Connected'] =        1
-
-        # Create device list
-        dbusservice['/Devices/0/DeviceInstance'] =   driver['instance']
-        dbusservice['/Devices/0/FirmwareVersion'] =  driver['version']
-        dbusservice['/Devices/0/ProductId'] =        driver['id']
-        dbusservice['/Devices/0/ProductName'] =      driver['name']
-        dbusservice['/Devices/0/ServiceName'] =      driver['servicename']
-        dbusservice['/Devices/0/VregLink'] =         "(API)"
-
     def openPort(serial_port):
         try:
             ser = serial.Serial(serial_port,115200)
@@ -124,7 +107,7 @@ def main():
             current_mode_id=0
         elif value_collection['SHUNT'].current<0:
             current_mode_id=1
-        dbusservice["/Info/CurrentMode"]=f"{current_mode[current_mode_id]} A"
+        dbusservice["/Info/CurrentMode"]=f"{current_mode[current_mode_id]}"
         dbusservice["/Raw/Info/CurrentMode"]=current_mode_id
 
     def dbusPublishStat():
@@ -138,9 +121,11 @@ def main():
         dbusservice["/Raw/Voltages/UpdateTimestamp"]=time.time()
         dbusservice['/Dc/0/Voltage']=value_collection['STAT'].packVdc
         try:
-            dbusservice['/Dc/0/Power']=round(value_collection['SHUNT'].current * value_collection['STAT'].packVdc * 10)/10
+            power = round(value_collection['SHUNT'].current * value_collection['STAT'].packVdc * 10)/10
         except:
-            dbusservice['/Dc/0/Power']=0
+            power = 0
+        dbusservice['/Dc/0/Power'] = power
+        dbusservice['/Info/Dc/0/Power'] = f"{power} W"
         dbusservice['/Dc/0/Temperature']=value_collection['STAT'].avgTempC
         Soc = round(((value_collection['STAT'].packVdc-19.6)/(25.2-19.6))*10000)/100
         dbusservice['/Soc']=Soc
@@ -195,7 +180,7 @@ def main():
 
         dbusservice["/System/MinCellTemperature"] = minCellTemp
         dbusservice["/System/MaxCellTemperature"] = maxCellTemp
-        dbusservice["/Info/Balancing/CellsBalancingCount"] = balCellCount
+        dbusservice["/Info/Balancing/CellsBalancingCount"] = f"{balCellCount} Cells"
         dbusservice["/Raw/Balancing/CellsBalancingCount"] = balCellCount
 
     def handle_serial_data():
@@ -256,7 +241,7 @@ if __name__ == "__main__":
     # Create the management objects, as specified in the ccgx dbus-api document
     dbusservice.add_path('/Mgmt/ProcessName', __file__)
     dbusservice.add_path('/Mgmt/ProcessVersion', driver['version'])
-    dbusservice.add_path('/Mgmt/Connection', driver['connection'])
+    dbusservice.add_path('/Mgmt/Connection', "ttyUSB")
 
     # Create the mandatory objects
     dbusservice.add_path('/DeviceInstance',  driver['instance'])
@@ -272,7 +257,7 @@ if __name__ == "__main__":
     dbusservice.add_path('/Devices/0/ProductId',       driver['id'])
     dbusservice.add_path('/Devices/0/ProductName',     driver['name'])
     dbusservice.add_path('/Devices/0/ServiceName',     driver['servicename'])
-    dbusservice.add_path('/Devices/0/VregLink',        "(API)")
+    dbusservice.add_path('/Devices/0/VregLink',        "USB")
 
     dbusservice.add_path('/System/NrOfBatteries',       4)
     dbusservice.add_path('/System/BatteriesParallel',   4)
@@ -294,8 +279,13 @@ if __name__ == "__main__":
     dbusservice.add_path('/Soc',               0)
     dbusservice.add_path('/TimeToGo',          0)
 
-    dbusservice.add_path('/Info/Soc',                      -1)
-    dbusservice.add_path('/Raw/Info/Soc',                  -1)
+    dbusservice.add_path('/Info/Dc/0/Voltage',      "0 V")
+    dbusservice.add_path('/Info/Dc/0/Current',      "0 A")
+    dbusservice.add_path('/Info/Dc/0/Power',        "0 W")
+    dbusservice.add_path('/Info/Dc/0/Temperature',  "0 C")
+
+    dbusservice.add_path('/Info/Soc',                      "0 %")
+    dbusservice.add_path('/Raw/Info/Soc',                  0)
     for sensorid in range(1,9):
         dbusservice.add_path(f'/Info/Temp/Sensor{sensorid}',     -1)
         dbusservice.add_path(f'/Raw/Info/Temp/Sensor{sensorid}', -1)
@@ -320,8 +310,8 @@ if __name__ == "__main__":
     dbusservice.add_path('/Info/MaxDischargeCurrent',     800)
     dbusservice.add_path('/Info/MaxChargeVoltage',       25.2)
     dbusservice.add_path('/Info/BatteryLowVoltage',      19.6)
-    dbusservice.add_path('/Info/CurrentMode',              -1)
-    dbusservice.add_path('/Raw/Info/CurrentMode',          -1)
+    dbusservice.add_path('/Info/CurrentMode',              "Idle")
+    dbusservice.add_path('/Raw/Info/CurrentMode',           2)
     dbusservice.add_path('/Info/Current',                  -1)
     dbusservice.add_path('/Raw/Info/Current',              -1)
     dbusservice.add_path('/Voltages/Sum',                  -1)
