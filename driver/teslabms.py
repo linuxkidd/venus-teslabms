@@ -166,16 +166,16 @@ def main():
         for moduleID in range(1,5):
             if value_collection["MODULES"][str(moduleID)].posTempC < minCellTemp:
                 minCellTemp = value_collection["MODULES"][str(moduleID)].posTempC
-                minCellTempId = f"{moduleID}_1"
+                minCellTempId = f"{moduleID}.1"
             if value_collection["MODULES"][str(moduleID)].negTempC < minCellTemp:
                 minCellTemp = value_collection["MODULES"][str(moduleID)].negTempC
-                minCellTempId = f"{moduleID}_0"
+                minCellTempId = f"{moduleID}.0"
             if value_collection["MODULES"][str(moduleID)].posTempC > maxCellTemp:
                 maxCellTemp = value_collection["MODULES"][str(moduleID)].posTempC
-                maxCellTempId = f"{moduleID}_1"
+                maxCellTempId = f"{moduleID}.1"
             if value_collection["MODULES"][str(moduleID)].negTempC > maxCellTemp:
                 maxCellTemp = value_collection["MODULES"][str(moduleID)].negTempC
-                maxCellTempId = f"{moduleID}_0"
+                maxCellTempId = f"{moduleID}.0"
 
             for cellID in range(6):
                 if value_collection["MODULES"][str(moduleID)].cellVdc[cellID] > maxCellVolt:
