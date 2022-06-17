@@ -242,9 +242,9 @@ def setupDbusPaths():
     dbusservice.add_path('/Info/BatteryLowVoltage', battery['min_battery_voltage'], writeable=True)
     dbusservice.add_path('/Info/MaxChargeVoltage', battery['max_battery_voltage'], writeable=True,
                                 gettextcallback=lambda p, v: "{:0.2f}V".format(v))
-    dbusservice.add_path('/Info/MaxChargeCurrent', battery['max_battery_current'], writeable=True,
+    dbusservice.add_path('/Info/MaxChargeCurrent', battery['max_charge_current'], writeable=True,
                                 gettextcallback=lambda p, v: "{:0.2f}A".format(v))
-    dbusservice.add_path('/Info/MaxDischargeCurrent', battery['max_battery_discharge_current'],
+    dbusservice.add_path('/Info/MaxDischargeCurrent', battery['max_discharge_current'],
                                 writeable=True, gettextcallback=lambda p, v: "{:0.2f}A".format(v))
     dbusservice.add_path('/System/NrOfCellsPerBattery', battery['cell_count'], writeable=True)
     dbusservice.add_path('/System/NrOfModulesOnline', battery['module_count'], writeable=True)
