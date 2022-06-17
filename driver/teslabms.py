@@ -19,7 +19,7 @@ driver = {
     'instance'    : 0,
     'id'          : 0x01,
     'version'     : '1.0',
-    'serial'      : 'tesla4s',
+    'serial'      : 'tesla4p',
     'connection'  : 'com.victronenergy.battery.ttyTESLABMS'
 }
 
