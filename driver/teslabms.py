@@ -338,7 +338,7 @@ if __name__ == "__main__":
     dbusservice.add_path(f'/Info/Balancing/CellsBalancingCount', -1)
     dbusservice.add_path(f'/Raw/Balancing/CellsBalancingCount',  -1)
 
-    dbusservice.add_path('/System/InstalledCapacity', "20.8 kWh")
+    dbusservice.add_path('/System/InstalledCapacity',    20.8)
     dbusservice.add_path('/Capacity',  0.0)
 
     dbusservice.add_path('/Info/ChargeRequest',             0)
