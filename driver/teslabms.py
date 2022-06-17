@@ -249,13 +249,13 @@ def setupDbusPaths():
     dbusservice.add_path('/System/NrOfCellsPerBattery', battery['cell_count'], writeable=True)
     dbusservice.add_path('/System/NrOfModulesOnline', battery['module_count'], writeable=True)
     dbusservice.add_path('/System/NrOfModulesOffline', 0, writeable=True)
-    dbusservice.add_path('/System/NrOfModulesBlockingCharge', None, writeable=True)
-    dbusservice.add_path('/System/NrOfModulesBlockingDischarge', None, writeable=True)
+    dbusservice.add_path('/System/NrOfModulesBlockingCharge', 0, writeable=True)
+    dbusservice.add_path('/System/NrOfModulesBlockingDischarge', 0, writeable=True)
     dbusservice.add_path('/Capacity', None, writeable=True,
                                 gettextcallback=lambda p, v: "{:0.2f}Ah".format(v))
     dbusservice.add_path('/InstalledCapacity', battery['installed_capacity'], writeable=True,
                                 gettextcallback=lambda p, v: "{:0.0f}Ah".format(v))
-    dbusservice.add_path('/ConsumedAmphours', None, writeable=True,
+    dbusservice.add_path('/ConsumedAmphours', 0, writeable=True,
                                 gettextcallback=lambda p, v: "{:0.0f}Ah".format(v))
     # Not used at this stage
     # dbusservice.add_path('/System/MinTemperatureCellId', None, writeable=True)
