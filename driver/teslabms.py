@@ -25,7 +25,7 @@ driver = {
 
 battery = {
     'min_battery_voltage': 19.6,
-    'max_charge_voltage': 25.2,
+    'max_battery_voltage': 25.2,
     'max_charge_current': 800,
     'max_discharge_current': 800,
     'cell_count': 6,
@@ -113,7 +113,7 @@ def main():
         dbusservice['/Dc/0/Current']=value_collection['SHUNT'].current
 
     def dbusPublishStat():
-        Soc = round(((value_collection['STAT'].packVdc-battery["min_battery_voltage"])/(battery["max_charge_voltage"]-battery["min_battery_voltage"]))*100,1)
+        Soc = round(((value_collection['STAT'].packVdc-battery["min_battery_voltage"])/(battery["max_battery_voltage"]-battery["min_battery_voltage"]))*100,1)
         dbusservice['/Soc']=Soc
         dbusservice['/Dc/0/Voltage']=value_collection['STAT'].packVdc
         try:
