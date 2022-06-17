@@ -293,11 +293,11 @@ if __name__ == "__main__":
     dbusservice.add_path('/System/MinTemperatureCellId', "")
     dbusservice.add_path('/System/MaxTemperatureCellId', "")
 
-    dbusservice.add_path('/System/modulesOnline',  4)
-    dbusservice.add_path('/System/modulesOffline', 0)
+    dbusservice.add_path('/System/ModulesOnline',  4)
+    dbusservice.add_path('/System/ModulesOffline', 0)
 
-    dbusservice.add_path('/System/nrOfModulesBlockingCharge', 0)
-    dbusservice.add_path('/System/nrOfModulesBlockingDischarge', 0)
+    dbusservice.add_path('/System/NrOfModulesBlockingCharge', 0)
+    dbusservice.add_path('/System/NrOfModulesBlockingDischarge', 0)
 
     dbusservice.add_path('/Io/AllowToCharge',           1)
     dbusservice.add_path('/Io/AllowToDischarge',        1)
