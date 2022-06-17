@@ -264,8 +264,8 @@ def setupDbusPaths():
     # Create SOC, DC and System items
     dbusservice.add_path('/Soc', None, writeable=True)
     dbusservice.add_path('/Dc/0/Voltage', None, writeable=True, gettextcallback=lambda p, v: "{:2.2f}V".format(v))
-    dbusservice.add_path('/Dc/0/Current', None, writeable=True, gettextcallback=lambda p, v: "{:2.2f}A".format(v))
-    dbusservice.add_path('/Dc/0/Power', None, writeable=True, gettextcallback=lambda p, v: "{:0.0f}W".format(v))
+    dbusservice.add_path('/Dc/0/Current', 0, writeable=True, gettextcallback=lambda p, v: "{:2.2f}A".format(v))
+    dbusservice.add_path('/Dc/0/Power',   0, writeable=True, gettextcallback=lambda p, v: "{:0.0f}W".format(v))
     dbusservice.add_path('/Dc/0/Temperature', None, writeable=True)
 
 
