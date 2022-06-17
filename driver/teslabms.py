@@ -283,10 +283,9 @@ def setupDbusPaths():
     dbusservice.add_path('/History/ChargeCycles', None, writeable=True)
     dbusservice.add_path('/History/TotalAhDrawn', None, writeable=True)
     dbusservice.add_path('/Balancing', None, writeable=True)
-    dbusservice.add_path('/Info/Balancing/CellsBalancingCount', None, writeable=True)
 
-    dbusservice.add_path('/Io/AllowToCharge', 0, writeable=True)
-    dbusservice.add_path('/Io/AllowToDischarge', 0, writeable=True)
+    dbusservice.add_path('/Io/AllowToCharge', 1, writeable=True)
+    dbusservice.add_path('/Io/AllowToDischarge', 1, writeable=True)
     # dbusservice.add_path('/SystemSwitch',1,writeable=True)
 
     # Create the alarms
