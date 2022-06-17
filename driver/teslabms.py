@@ -30,7 +30,7 @@ battery = {
     'max_discharge_current': 800,
     'cell_count': 6,
     'module_count': 4,
-    'installed_capacity': 20,
+    'installed_capacity': 800,
 
 }
 
