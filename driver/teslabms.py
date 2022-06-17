@@ -16,11 +16,22 @@ time.tzset()
 driver = {
     'name'        : 'Tesla BMS',
     'servicename' : 'teslabms',
-    'instance'    : 1,
+    'instance'    : 0,
     'id'          : 0x01,
     'version'     : '1.0',
     'serial'      : 'tesla4s',
     'connection'  : 'com.victronenergy.battery.ttyTESLABMS'
+}
+
+battery = {
+    'min_battery_voltage': 19.6,
+    'max_charge_voltage': 25.2,
+    'max_charge_current': 800,
+    'max_discharge_current': 800,
+    'cell_count': 6,
+    'module_count': 4,
+    'installed_capacity': 20,
+
 }
 
 def signal_handler(signal, frame):
@@ -99,57 +110,30 @@ def main():
             exit()
 
     def dbusPublishShunt():
-        dbusservice["/Info/Current"]=f"{value_collection['SHUNT'].current} A"
-        dbusservice["/Raw/Info/Current"]=value_collection['SHUNT'].current
         dbusservice['/Dc/0/Current']=value_collection['SHUNT'].current
-        current_mode_id=2
-        if value_collection['SHUNT'].current>0:
-            current_mode_id=0
-        elif value_collection['SHUNT'].current<0:
-            current_mode_id=1
-        dbusservice["/Info/CurrentMode"]=f"{current_mode[current_mode_id]}"
-        dbusservice["/Raw/Info/CurrentMode"]=current_mode_id
 
     def dbusPublishStat():
-        dbusservice["/Voltages/Sum"]=f"{value_collection['STAT'].packVdc} V"
-        dbusservice["/Raw/Voltages/Sum"]=value_collection['STAT'].packVdc
-        if value_collection['STAT'].packVdc < 20.0:
-            dbusservice["/Info/ChargeRequest"] = 1
-        elif value_collection['STAT'].packVdc > 20.5:
-            dbusservice["/Info/ChargeRequest"] = 0
-        dbusservice["/Voltages/UpdateTimestamp"]=dt.now().strftime('%a %d.%m.%Y %H:%M:%S')
-        dbusservice["/Raw/Voltages/UpdateTimestamp"]=time.time()
+        Soc = round(((value_collection['STAT'].packVdc-battery["min_battery_voltage"])/(battery["max_charge_voltage"]-battery["min_battery_voltage"]))*100,1)
+        dbusservice['/Soc']=Soc
         dbusservice['/Dc/0/Voltage']=value_collection['STAT'].packVdc
-        dbusservice['/Info/Dc/0/Voltage']=f"{value_collection['STAT'].packVdc} V"
         try:
             power = round(value_collection['SHUNT'].current * value_collection['STAT'].packVdc,1)
         except:
             power = 0
         dbusservice['/Dc/0/Power'] = power
-        dbusservice['/Info/Dc/0/Power'] = f"{power} W"
         dbusservice['/Dc/0/Temperature']=value_collection['STAT'].avgTempC
-        Soc = round(((value_collection['STAT'].packVdc-19.6)/(25.2-19.6))*100,1)
-        Capacity = round(Soc*20.0/100,2)
+
+        Capacity = round(Soc*battery["installed_capacity"]/100,2)
         dbusservice['/Capacity']=Capacity
-        dbusservice['/Soc']=Soc
-        dbusservice['/Info/Soc']=f"{Soc} %"
-        dbusservice['/Raw/Info/Soc']=Soc
-        dbusservice['/TimeToGo']=0
+#        dbusservice['/TimeToGo']=0
 
     def dbusPublishModules(moduleID):
-        dbusservice[f"/Voltages/Sum{moduleID}"]=f'{value_collection["MODULES"][str(moduleID)].moduleVdc} V'
-        dbusservice[f"/Raw/Voltages/Sum{moduleID}"]=value_collection["MODULES"][str(moduleID)].moduleVdc
-        dbusservice[f"/Info/Temp/Sensor{moduleID}_0"]=f'{value_collection["MODULES"][str(moduleID)].negTempC} C'
-        dbusservice[f"/Raw/Info/Temp/Sensor{moduleID}_0"]=value_collection["MODULES"][str(moduleID)].negTempC
-        dbusservice[f"/Info/Temp/Sensor{moduleID}_1"]=f'{value_collection["MODULES"][str(moduleID)].posTempC} C'
-        dbusservice[f"/Raw/Info/Temp/Sensor{moduleID}_1"]=value_collection["MODULES"][str(moduleID)].posTempC
-        dbusservice["/Info/UpdateTimestamp"]=dt.now().strftime('%a %d.%m.%Y %H:%M:%S')
-        dbusservice["/Raw/Info/UpdateTimestamp"]=time.time()
+        dbusservice[f"/Module/{moduleID}/Sum"]=value_collection["MODULES"][str(moduleID)].moduleVdc
+        dbusservice[f"/Module/{moduleID}/Temperature/Neg"]=value_collection["MODULES"][str(moduleID)].negTempC
+        dbusservice[f"/Module/{moduleID}/Temperature/Pos"]=value_collection["MODULES"][str(moduleID)].posTempC
         for cellid in range(6):
-            dbusservice[f"/Voltages/Cell{moduleID}_{cellid+1}"]=f'{value_collection["MODULES"][str(moduleID)].cellVdc[cellid]} V'
-            dbusservice[f"/Raw/Voltages/Cell{moduleID}_{cellid+1}"]=value_collection["MODULES"][str(moduleID)].cellVdc[cellid]
-            dbusservice[f"/Balancing/Cell{moduleID}_{cellid+1}"]=f'{yn[value_collection["MODULES"][str(moduleID)].cellBal[cellid]]}'
-            dbusservice[f"/Raw/Balancing/Cell{moduleID}_{cellid+1}"]=value_collection["MODULES"][str(moduleID)].cellBal[cellid]
+            dbusservice[f"/Module/{moduleID}/Cell_{cellid+1}/Volts"]=value_collection["MODULES"][str(moduleID)].cellVdc[cellid]
+            dbusservice[f"/Module/{moduleID}/Cell_{cellid+1}/Balancing"]=f'{yn[value_collection["MODULES"][str(moduleID)].cellBal[cellid]]}'
         if moduleID==4:
             dbusPublishMinMax()
 
@@ -166,16 +150,16 @@ def main():
         for moduleID in range(1,5):
             if value_collection["MODULES"][str(moduleID)].posTempC < minCellTemp:
                 minCellTemp = value_collection["MODULES"][str(moduleID)].posTempC
-                minCellTempId = f"{moduleID}.1"
+                minCellTempId = f"{moduleID}.Pos"
             if value_collection["MODULES"][str(moduleID)].negTempC < minCellTemp:
                 minCellTemp = value_collection["MODULES"][str(moduleID)].negTempC
-                minCellTempId = f"{moduleID}.0"
+                minCellTempId = f"{moduleID}.Neg"
             if value_collection["MODULES"][str(moduleID)].posTempC > maxCellTemp:
                 maxCellTemp = value_collection["MODULES"][str(moduleID)].posTempC
-                maxCellTempId = f"{moduleID}.1"
+                maxCellTempId = f"{moduleID}.Pos"
             if value_collection["MODULES"][str(moduleID)].negTempC > maxCellTemp:
                 maxCellTemp = value_collection["MODULES"][str(moduleID)].negTempC
-                maxCellTempId = f"{moduleID}.0"
+                maxCellTempId = f"{moduleID}.Neg"
 
             for cellID in range(6):
                 if value_collection["MODULES"][str(moduleID)].cellVdc[cellID] > maxCellVolt:
@@ -190,20 +174,11 @@ def main():
         dbusservice["/System/MinVoltageCellId"] = minCellVoltId
         dbusservice["/System/MaxCellVoltage"] = maxCellVolt
         dbusservice["/System/MaxVoltageCellId"] = maxCellVoltId
-        dbusservice["/Raw/Voltages/Min"] = minCellVolt
-        dbusservice["/Raw/Voltages/Max"] = maxCellVolt
-        cellDiff = round((maxCellVolt - minCellVolt),2)
-        dbusservice["/Raw/Voltages/Diff"] = cellDiff
-        dbusservice["/Voltages/Min"] = f"{minCellVolt} V"
-        dbusservice["/Voltages/Max"] = f"{maxCellVolt} V"
-        dbusservice["/Voltages/Diff"] = f"{cellDiff} dV"
 
         dbusservice["/System/MinCellTemperature"] = minCellTemp
         dbusservice["/System/MinTemperatureCellId"] = minCellTempId
         dbusservice["/System/MaxCellTemperature"] = maxCellTemp
         dbusservice["/System/MaxTemperatureCellId"] = maxCellTempId
-        dbusservice["/Info/Balancing/CellsBalancingCount"] = f"{balCellCount} Cells"
-        dbusservice["/Raw/Balancing/CellsBalancingCount"] = balCellCount
 
     def handle_serial_data():
         myline=ser.readline()
@@ -248,6 +223,106 @@ def main():
     ser.flushInput()
     mainLoop()
 
+def setupDbusPaths():
+    # Create the management objects, as specified in the ccgx dbus-api document
+    dbusservice.add_path('/Mgmt/ProcessName', __file__)
+    dbusservice.add_path('/Mgmt/ProcessVersion', 'Python ' + platform.python_version())
+    dbusservice.add_path('/Mgmt/Connection', 'Serial ttyUSB')
+
+    # Create the mandatory objects
+    dbusservice.add_path('/DeviceInstance',    driver['instance'])
+    dbusservice.add_path('/ProductId',         driver['id'])
+    dbusservice.add_path('/ProductName',       driver['name'])
+    dbusservice.add_path('/FirmwareVersion',   driver['version'])
+    dbusservice.add_path('/HardwareVersion',   driver['version'])
+    dbusservice.add_path('/Serial',            driver['serial'])
+    dbusservice.add_path('/Connected', 1)
+
+    # Create static battery info
+    dbusservice.add_path('/Info/BatteryLowVoltage', battery['min_battery_voltage'], writeable=True)
+    dbusservice.add_path('/Info/MaxChargeVoltage', battery['max_battery_voltage'], writeable=True,
+                                gettextcallback=lambda p, v: "{:0.2f}V".format(v))
+    dbusservice.add_path('/Info/MaxChargeCurrent', battery['max_battery_current'], writeable=True,
+                                gettextcallback=lambda p, v: "{:0.2f}A".format(v))
+    dbusservice.add_path('/Info/MaxDischargeCurrent', battery['max_battery_discharge_current'],
+                                writeable=True, gettextcallback=lambda p, v: "{:0.2f}A".format(v))
+    dbusservice.add_path('/System/NrOfCellsPerBattery', battery['cell_count'], writeable=True)
+    dbusservice.add_path('/System/NrOfModulesOnline', battery['module_count'], writeable=True)
+    dbusservice.add_path('/System/NrOfModulesOffline', 0, writeable=True)
+    dbusservice.add_path('/System/NrOfModulesBlockingCharge', None, writeable=True)
+    dbusservice.add_path('/System/NrOfModulesBlockingDischarge', None, writeable=True)
+    dbusservice.add_path('/Capacity', None, writeable=True,
+                                gettextcallback=lambda p, v: "{:0.2f}Ah".format(v))
+    dbusservice.add_path('/InstalledCapacity', battery['installed_capacity'], writeable=True,
+                                gettextcallback=lambda p, v: "{:0.0f}Ah".format(v))
+    dbusservice.add_path('/ConsumedAmphours', None, writeable=True,
+                                gettextcallback=lambda p, v: "{:0.0f}Ah".format(v))
+    # Not used at this stage
+    # dbusservice.add_path('/System/MinTemperatureCellId', None, writeable=True)
+    # dbusservice.add_path('/System/MaxTemperatureCellId', None, writeable=True)
+
+    # Create SOC, DC and System items
+    dbusservice.add_path('/Soc', None, writeable=True)
+    dbusservice.add_path('/Dc/0/Voltage', None, writeable=True, gettextcallback=lambda p, v: "{:2.2f}V".format(v))
+    dbusservice.add_path('/Dc/0/Current', None, writeable=True, gettextcallback=lambda p, v: "{:2.2f}A".format(v))
+    dbusservice.add_path('/Dc/0/Power', None, writeable=True, gettextcallback=lambda p, v: "{:0.0f}W".format(v))
+    dbusservice.add_path('/Dc/0/Temperature', None, writeable=True)
+
+
+    # Create battery extras
+    dbusservice.add_path('/System/MinCellTemperature', None, writeable=True)
+    dbusservice.add_path('/System/MaxCellTemperature', None, writeable=True)
+    dbusservice.add_path('/System/MinTemperatureCellId', None, writeable=True)
+    dbusservice.add_path('/System/MaxTemperatureCellId', None, writeable=True)
+    dbusservice.add_path('/System/MaxCellVoltage', None, writeable=True,
+                                gettextcallback=lambda p, v: "{:0.3f}V".format(v))
+    dbusservice.add_path('/System/MaxVoltageCellId', None, writeable=True)
+    dbusservice.add_path('/System/MinCellVoltage', None, writeable=True,
+                                gettextcallback=lambda p, v: "{:0.3f}V".format(v))
+    dbusservice.add_path('/System/MinVoltageCellId', None, writeable=True)
+    dbusservice.add_path('/History/ChargeCycles', None, writeable=True)
+    dbusservice.add_path('/History/TotalAhDrawn', None, writeable=True)
+    dbusservice.add_path('/Balancing', None, writeable=True)
+    dbusservice.add_path('/Info/Balancing/CellsBalancingCount', None, writeable=True)
+
+    dbusservice.add_path('/Io/AllowToCharge', 0, writeable=True)
+    dbusservice.add_path('/Io/AllowToDischarge', 0, writeable=True)
+    # dbusservice.add_path('/SystemSwitch',1,writeable=True)
+
+    # Create the alarms
+    dbusservice.add_path('/Alarms/LowVoltage', None, writeable=True)
+    dbusservice.add_path('/Alarms/HighVoltage', None, writeable=True)
+    dbusservice.add_path('/Alarms/LowCellVoltage', None, writeable=True)
+    dbusservice.add_path('/Alarms/HighCellVoltage', None, writeable=True)
+    dbusservice.add_path('/Alarms/LowSoc', None, writeable=True)
+    dbusservice.add_path('/Alarms/HighChargeCurrent', None, writeable=True)
+    dbusservice.add_path('/Alarms/HighDischargeCurrent', None, writeable=True)
+    dbusservice.add_path('/Alarms/CellImbalance', None, writeable=True)
+    dbusservice.add_path('/Alarms/InternalFailure', None, writeable=True)
+    dbusservice.add_path('/Alarms/HighChargeTemperature', None, writeable=True)
+    dbusservice.add_path('/Alarms/LowChargeTemperature', None, writeable=True)
+    dbusservice.add_path('/Alarms/HighTemperature', None, writeable=True)
+    dbusservice.add_path('/Alarms/LowTemperature', None, writeable=True)
+
+    #cell voltages
+    for m in range(1,battery['module_count']+1):
+        for i in range(1,battery['cell_count']+1):
+            dbusservice.add_path(f'/Module/{m}/Cell_{i}/Volts', None, writeable=True, gettextcallback=lambda p, v: "{:0.3f}V".format(v))
+            dbusservice.add_path(f'/Module/{m}/Cell_{i}/Balancing', None, writeable=True)
+        dbusservice.add_path(f'/Module/{m}/Temperature/Neg', None, writeable=True, gettextcallback=lambda p, v: "{:0.1f}C".format(v))
+        dbusservice.add_path(f'/Module/{m}/Temperature/Pos', None, writeable=True, gettextcallback=lambda p, v: "{:0.1f}C".format(v))
+        dbusservice.add_path(f'/Module/{m}/Sum',  None, writeable=True, gettextcallback=lambda p, v: "{:2.2f}V".format(v))
+        dbusservice.add_path(f'/Module/{m}/Diff', None, writeable=True, gettextcallback=lambda p, v: "{:0.3f}V".format(v))
+    dbusservice.add_path('/Module/Sum',  None, writeable=True, gettextcallback=lambda p, v: "{:2.2f}V".format(v))
+    dbusservice.add_path('/Module/Diff', None, writeable=True, gettextcallback=lambda p, v: "{:0.3f}V".format(v))
+
+    # Create TimeToSoC items
+    for num in [0, 10, 20, 30, 50, 80, 90, 100]:
+        dbusservice.add_path(f'/TimeToSoC/{num}', None, writeable=True)
+
+    return True
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--port", default = "/dev/ttyACM0", help="commuications port descriptor, e.g /dev/ttyACM0 or COM1")
@@ -259,112 +334,7 @@ if __name__ == "__main__":
 
     DBusGMainLoop(set_as_default=True)
     dbusservice = VeDbusService(driver['connection'])
-
-    # Create the management objects, as specified in the ccgx dbus-api document
-    dbusservice.add_path('/Mgmt/ProcessName', __file__)
-    dbusservice.add_path('/Mgmt/ProcessVersion', driver['version'])
-    dbusservice.add_path('/Mgmt/Connection', "ttyUSB")
-
-    # Create the mandatory objects
-    dbusservice.add_path('/DeviceInstance',  driver['instance'])
-    dbusservice.add_path('/ProductId',       driver['id'])
-    dbusservice.add_path('/ProductName',     driver['name'])
-    dbusservice.add_path('/HardwareVersion', driver['version'])
-    dbusservice.add_path('/Serial',          driver['serial'])
-    dbusservice.add_path('/Connected',       1)
-
-    # Create device list
-    dbusservice.add_path('/Devices/0/DeviceInstance',  driver['instance'])
-    dbusservice.add_path('/Devices/0/FirmwareVersion', driver['version'])
-    dbusservice.add_path('/Devices/0/ProductId',       driver['id'])
-    dbusservice.add_path('/Devices/0/ProductName',     driver['name'])
-    dbusservice.add_path('/Devices/0/ServiceName',     driver['servicename'])
-    dbusservice.add_path('/Devices/0/VregLink',        "USB")
-
-    dbusservice.add_path('/System/NrOfBatteries',       4)
-    dbusservice.add_path('/System/BatteriesParallel',   4)
-    dbusservice.add_path('/System/BatteriesSeries',     1)
-    dbusservice.add_path('/System/NrOfCellsPerBattery', 6)
-    dbusservice.add_path('/System/MinCellVoltage',     -1)
-    dbusservice.add_path('/System/MaxCellVoltage',     -1)
-    dbusservice.add_path('/System/MinCellTemperature', -1)
-    dbusservice.add_path('/System/MaxCellTemperature', -1)
-    dbusservice.add_path('/System/MinVoltageCellId',     "")
-    dbusservice.add_path('/System/MaxVoltageCellId',     "")
-    dbusservice.add_path('/System/MinTemperatureCellId', "")
-    dbusservice.add_path('/System/MaxTemperatureCellId', "")
-
-    dbusservice.add_path('/System/NrOfModulesOnline',  4)
-    dbusservice.add_path('/System/NrOfModulesOffline', 0)
-
-    dbusservice.add_path('/System/NrOfModulesBlockingCharge', 0)
-    dbusservice.add_path('/System/NrOfModulesBlockingDischarge', 0)
-
-    dbusservice.add_path('/Io/AllowToCharge',           1)
-    dbusservice.add_path('/Io/AllowToDischarge',        1)
-
-
-    # Create the Tesla BMS paths
-    dbusservice.add_path('/Dc/0/Voltage',      0)
-    dbusservice.add_path('/Dc/0/Current',      0)
-    dbusservice.add_path('/Dc/0/Power',        0)
-    dbusservice.add_path('/Dc/0/Temperature',  0)
-    dbusservice.add_path('/Soc',               0)
-    dbusservice.add_path('/TimeToGo',          0)
-
-    dbusservice.add_path('/Info/Dc/0/Voltage',      "0 V")
-    dbusservice.add_path('/Info/Dc/0/Current',      "0 A")
-    dbusservice.add_path('/Info/Dc/0/Power',        "0 W")
-    dbusservice.add_path('/Info/Dc/0/Temperature',  "0 C")
-
-    dbusservice.add_path('/Info/Soc',                      "0 %")
-    dbusservice.add_path('/Raw/Info/Soc',                  0)
-
-    dbusservice.add_path('/Info/UpdateTimestamp',          -1)
-    dbusservice.add_path('/Raw/Info/UpdateTimestamp',      -1)
-
-    for moduleid in range(1,5):
-        for cellid in range(1,7):
-            dbusservice.add_path(f'/Voltages/Cell{moduleid}_{cellid}',      -1)
-            dbusservice.add_path(f'/Raw/Voltages/Cell{moduleid}_{cellid}',  -1)
-            dbusservice.add_path(f'/Balancing/Cell{moduleid}_{cellid}',     -1)
-            dbusservice.add_path(f'/Raw/Balancing/Cell{moduleid}_{cellid}', -1)
-        dbusservice.add_path(f'/Voltages/Sum{moduleid}',                  -1)
-        dbusservice.add_path(f'/Raw/Voltages/Sum{moduleid}',              -1)
-        dbusservice.add_path(f'/Info/Temp/Sensor{moduleid}_0',     -1)
-        dbusservice.add_path(f'/Raw/Info/Temp/Sensor{moduleid}_0', -1)
-        dbusservice.add_path(f'/Info/Temp/Sensor{moduleid}_1',     -1)
-        dbusservice.add_path(f'/Raw/Info/Temp/Sensor{moduleid}_1', -1)
-
-    dbusservice.add_path(f'/Info/Balancing/CellsBalancingCount', -1)
-    dbusservice.add_path(f'/Raw/Balancing/CellsBalancingCount',  -1)
-
-    dbusservice.add_path('/InstalledCapacity',            20.0)
-    dbusservice.add_path('/Capacity',  0.0)
-
-    dbusservice.add_path('/Info/ChargeRequest',             0)
-    dbusservice.add_path('/Info/MaxChargeCurrent',        800)
-    dbusservice.add_path('/Info/MaxDischargeCurrent',     800)
-    dbusservice.add_path('/Info/MaxChargeVoltage',       25.2)
-    dbusservice.add_path('/Info/BatteryLowVoltage',      19.6)
-    dbusservice.add_path('/Info/CurrentMode',              "Idle")
-    dbusservice.add_path('/Raw/Info/CurrentMode',           2)
-    dbusservice.add_path('/Info/Current',                  -1)
-    dbusservice.add_path('/Raw/Info/Current',              -1)
-    dbusservice.add_path('/Voltages/Sum',                  -1)
-    dbusservice.add_path('/Raw/Voltages/Sum',              -1)
-    dbusservice.add_path('/Voltages/Diff',                 -1)
-    dbusservice.add_path('/Raw/Voltages/Diff',             -1)
-    dbusservice.add_path('/Voltages/Max',                  -1)
-    dbusservice.add_path('/Raw/Voltages/Max',              -1)
-    dbusservice.add_path('/Voltages/Min',                  -1)
-    dbusservice.add_path('/Raw/Voltages/Min',              -1)
-    dbusservice.add_path('/Voltages/BatteryCapacityWH',    "20 kWh")
-    dbusservice.add_path('/Raw/Voltages/BatteryCapacityWH', 20000)
-    dbusservice.add_path('/Voltages/BatteryCapacityAH',    "930 Ah")
-    dbusservice.add_path('/Raw/Voltages/BatteryCapacityAH', 930)
-    dbusservice.add_path('/Voltages/UpdateTimestamp',      -1)
-    dbusservice.add_path('/Raw/Voltages/UpdateTimestamp',  -1)
+    setupDbusPaths()
 
     value_collection = {}
     main()
