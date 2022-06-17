@@ -122,14 +122,14 @@ def main():
         dbusservice['/Dc/0/Voltage']=value_collection['STAT'].packVdc
         dbusservice['/Info/Dc/0/Voltage']=f"{value_collection['STAT'].packVdc} V"
         try:
-            power = round(value_collection['SHUNT'].current * value_collection['STAT'].packVdc * 10)/10
+            power = round(value_collection['SHUNT'].current * value_collection['STAT'].packVdc,1)
         except:
             power = 0
         dbusservice['/Dc/0/Power'] = power
         dbusservice['/Info/Dc/0/Power'] = f"{power} W"
         dbusservice['/Dc/0/Temperature']=value_collection['STAT'].avgTempC
-        Soc = round(((value_collection['STAT'].packVdc-19.6)/(25.2-19.6))*10000)/100
-        Capacity = round(Soc*20.8/10)/10
+        Soc = round(((value_collection['STAT'].packVdc-19.6)/(25.2-19.6))*100,1)
+        Capacity = round(Soc*20.0/100,2)
         dbusservice['/Capacity']=Capacity
         dbusservice['/Soc']=Soc
         dbusservice['/Info/Soc']=f"{Soc} %"
@@ -192,7 +192,7 @@ def main():
         dbusservice["/System/MaxVoltageCellId"] = maxCellVoltId
         dbusservice["/Raw/Voltages/Min"] = minCellVolt
         dbusservice["/Raw/Voltages/Max"] = maxCellVolt
-        cellDiff = round((maxCellVolt - minCellVolt)*100)/100
+        cellDiff = round((maxCellVolt - minCellVolt),2)
         dbusservice["/Raw/Voltages/Diff"] = cellDiff
         dbusservice["/Voltages/Min"] = f"{minCellVolt} V"
         dbusservice["/Voltages/Max"] = f"{maxCellVolt} V"
@@ -339,7 +339,7 @@ if __name__ == "__main__":
     dbusservice.add_path(f'/Info/Balancing/CellsBalancingCount', -1)
     dbusservice.add_path(f'/Raw/Balancing/CellsBalancingCount',  -1)
 
-    dbusservice.add_path('/System/InstalledCapacity',    20.8)
+    dbusservice.add_path('/InstalledCapacity',            20.0)
     dbusservice.add_path('/Capacity',  0.0)
 
     dbusservice.add_path('/Info/ChargeRequest',             0)
