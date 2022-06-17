@@ -192,10 +192,11 @@ def main():
         dbusservice["/System/MaxVoltageCellId"] = maxCellVoltId
         dbusservice["/Raw/Voltages/Min"] = minCellVolt
         dbusservice["/Raw/Voltages/Max"] = maxCellVolt
-        dbusservice["/Raw/Voltages/Diff"] = maxCellVolt - minCellVolt
+        cellDiff = round((maxCellVolt - minCellVolt)*100)/100
+        dbusservice["/Raw/Voltages/Diff"] = cellDiff
         dbusservice["/Voltages/Min"] = f"{minCellVolt} V"
         dbusservice["/Voltages/Max"] = f"{maxCellVolt} V"
-        dbusservice["/Voltages/Diff"] = f"{maxCellVolt - minCellVolt} dV"
+        dbusservice["/Voltages/Diff"] = f"{cellDiff} dV"
 
         dbusservice["/System/MinCellTemperature"] = minCellTemp
         dbusservice["/System/MinTemperatureCellId"] = minCellTempId
