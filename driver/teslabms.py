@@ -8,7 +8,7 @@ from gi.repository import GLib as gobject
 # Victron packages
 sys.path.insert(1, os.path.join(os.path.dirname(__file__), './ext/velib_python'))
 from vedbus import VeDbusService
-from settingsdevice import SettingsDevice
+
 
 os.environ['TZ'] = 'UTC'
 time.tzset()
@@ -31,7 +31,7 @@ battery = {
     'cell_count': 6,
     'module_count': 4,
     'installed_capacity': 800,
-
+    'installed_capacity_wh': 800
 }
 
 def signal_handler(signal, frame):
@@ -42,64 +42,63 @@ def signal_handler(signal, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 class SHUNT_proto():
-    current      = 0.0
     voltage      = 0.0
-    netamphours  = 0.0
-    netwatthours = 0.0
+    current      = 0.0
+    netAmpHours  = 0.0
+    netWattHours = 0.0
 
     def __getitem__(self, item):
         return getattr(self,item)
 
     def decode(self, packet_buffer):
         self.decoded      = 1
-        self.current      = float(packet_buffer[1])
-        self.voltage      = float(packet_buffer[2])
-        self.netamphours  = float(packet_buffer[3])
-        self.netwatthours = float(packet_buffer[4])
+        self.voltage      = float(packet_buffer[1])
+        self.current      = float(packet_buffer[2])
+        self.netAmpHours  = float(packet_buffer[3])
+        self.netWattHours = float(packet_buffer[4])
 
 class STAT_proto():
-    isFaulted = 0      # 1
-    numModules = 0     # 2
-    packVdc = 0.0      # 3
-    avgCellVdc = 0.0   # 4
-    avgTempC = 0.0      # 5
+    isFaulted  = 0      # 1
+    numModules = 0      # 2
+    packVdc    = 0.0    # 3
+    avgCellVdc = 0.0    # 4
+    avgTempC   = 0.0    # 5
     decoded=0
     def __getitem__(self, item):
         return getattr(self, item)
 
     def decode(self, packet_buffer):
         self.decoded=1
-        self.isFaulted=int(packet_buffer[1])
-        self.numModules=int(packet_buffer[2])
-        self.packVdc=float(packet_buffer[3])
-        self.avgCellVdc=float(packet_buffer[4])
-        self.avgTempC=float(packet_buffer[5])
+        self.isFaulted   =   int(packet_buffer[1])
+        self.numModules  =   int(packet_buffer[2])
+        self.packVdc     = float(packet_buffer[3])
+        self.avgCellVdc  = float(packet_buffer[4])
+        self.avgTempC    = float(packet_buffer[5])
 
 class MODULE_proto():
     moduleVdc = 0.0      # 2
-    cellVdc = [ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 ]
-    cellBal = [   0,   0,   0,   0,   0,   0 ]
-    negTempC = 0.0
-    posTempC = 0.0
-    decoded=0
+    cellVdc   = [ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 ]
+    cellBal   = [   0,   0,   0,   0,   0,   0 ]
+    negTempC  = 0.0
+    posTempC  = 0.0
+    decoded   = 0
     def __getitem__(self, item):
         return getattr(self, item)
 
     def decode(self, packet_buffer):
-        if(len(packet_buffer)<16):
+        if len(packet_buffer) < 16:
             return
-        self.decoded=1
-        self.moduleVdc = float(packet_buffer[2])
+        self.decoded        = 1
+        self.moduleVdc      = float(packet_buffer[2])
         for i in range(6):
-            self.cellVdc[i]=float(packet_buffer[(i*2)+3])
-            self.cellBal[i]=int(packet_buffer[(i*2)+4])
-        self.negTempC = float(packet_buffer[15])
-        self.posTempC = float(packet_buffer[16])
+            self.cellVdc[i] = float(packet_buffer[(i*2)+3])
+            self.cellBal[i] =   int(packet_buffer[(i*2)+4])
+        self.negTempC       = float(packet_buffer[15])
+        self.posTempC       = float(packet_buffer[16])
 
 def main():
-    current_mode=["Discharge","Charge","Storage"]
-    yn=["No","Yes"]
-    value_collection['STAT']=STAT_proto()
+    yn                       = ["No","Yes"]
+    value_collection['STAT'] = STAT_proto()
 
     def openPort(serial_port):
         try:
@@ -110,7 +109,15 @@ def main():
             exit()
 
     def dbusPublishShunt():
-        dbusservice['/Dc/0/Current']=value_collection['SHUNT'].current
+        dbusservice['/Dc/0/Current'] = value_collection['SHUNT'].current
+        # dbusservice['/DC/0/Power']   = value_collection['SHUNT'].power
+        try:
+            power = round(value_collection['SHUNT'].current * value_collection['STAT'].packVdc,1)
+        except:
+            power = 0
+        dbusservice['/Dc/0/Power'] = power
+        dbusservice['/Capacity']   = round( battery["installed_capacity"] - value_collection['SHUNT'].netAmpHours, 2 )
+        dbusservice['/CapacityWh'] = round( battery["installed_capacity_wh"] - value_collection['SHUNT'].netWattHours, 2 )
 
     def dbusPublishStat():
         Soc = round(((value_collection['STAT'].packVdc-battery["min_battery_voltage"])/(battery["max_battery_voltage"]-battery["min_battery_voltage"]))*100,1)
@@ -123,9 +130,9 @@ def main():
         dbusservice['/Dc/0/Power'] = power
         dbusservice['/Dc/0/Temperature']=value_collection['STAT'].avgTempC
 
-        Capacity = round(Soc*battery["installed_capacity"]/100,2)
-        dbusservice['/Capacity']=Capacity
-#        dbusservice['/TimeToGo']=0
+        # Capacity = round(Soc*battery["installed_capacity"]/100,2)
+        # dbusservice['/Capacity']=Capacity
+        # dbusservice['/TimeToGo']=0
 
     def dbusPublishModules(moduleID):
         dbusservice[f"/Module/{moduleID}/Sum"]=value_collection["MODULES"][str(moduleID)].moduleVdc
@@ -253,13 +260,17 @@ def setupDbusPaths():
     dbusservice.add_path('/System/NrOfModulesBlockingDischarge', 0, writeable=True)
     dbusservice.add_path('/Capacity', None, writeable=True,
                                 gettextcallback=lambda p, v: "{:0.2f}Ah".format(v))
+    dbusservice.add_path('/CapacityWh', None, writeable=True,
+                                gettextcallback=lambda p, v: "{:0.2f}Wh".format(v))
+
     dbusservice.add_path('/InstalledCapacity', battery['installed_capacity'], writeable=True,
+                                gettextcallback=lambda p, v: "{:0.0f}Ah".format(v))
+    dbusservice.add_path('/InstalledCapacityWh', battery['installed_capacity_wh'], writeable=True,
                                 gettextcallback=lambda p, v: "{:0.0f}Ah".format(v))
     dbusservice.add_path('/ConsumedAmphours', 0, writeable=True,
                                 gettextcallback=lambda p, v: "{:0.0f}Ah".format(v))
-    # Not used at this stage
-    # dbusservice.add_path('/System/MinTemperatureCellId', None, writeable=True)
-    # dbusservice.add_path('/System/MaxTemperatureCellId', None, writeable=True)
+    dbusservice.add_path('/ConsumedWatthours', 0, writeable=True,
+                                gettextcallback=lambda p, v: "{:0.0f}Wh".format(v))
 
     # Create SOC, DC and System items
     dbusservice.add_path('/Soc', None, writeable=True)
