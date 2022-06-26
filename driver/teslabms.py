@@ -125,17 +125,15 @@ def main():
         Soc = round(((value_collection['STAT'].packVdc-battery["min_battery_voltage"])/(battery["max_battery_voltage"]-battery["min_battery_voltage"]))*100,1)
         dbusservice['/Soc']=Soc
         dbusservice['/Dc/0/Voltage']=value_collection['STAT'].packVdc
-        try:
-            power = round(value_collection['SHUNT'].current * value_collection['STAT'].packVdc,1)
-        except:
+        if 'SHUNT' not in value_collection:
             power = 0
-        dbusservice['/Dc/0/Power'] = power
-        dbusservice['/Dc/0/Temperature']=value_collection['STAT'].avgTempC
-
-        if 'SHUNT' not in value_collection or value_collection['SHUNT'].netAmpHours == 0.0:
             dbusservice['/Capacity']   = round(Soc * battery["installed_capacity"]/100,2)
             dbusservice['/TimeToGo']   = 0
             dbusservice['/CapacityWh'] = round( Soc * battery["installed_capacity_wh"], 2 )
+        else:
+            power = round(value_collection['SHUNT'].current * value_collection['STAT'].packVdc,1)
+        dbusservice['/Dc/0/Power'] = power
+        dbusservice['/Dc/0/Temperature']=value_collection['STAT'].avgTempC
 
     def dbusPublishModules(moduleID):
         if value_collection["MODULES"][str(moduleID)].moduleVdc == 0:
@@ -207,13 +205,13 @@ def main():
             dbusPublishStat()
 
         elif myparts[0] == "SHUNT":
-            if("SHUNT" not in value_collection):
+            if "SHUNT" not in value_collection:
                 value_collection["SHUNT"]=SHUNT_proto()
             value_collection["SHUNT"].decode(myparts)
             dbusPublishShunt()
 
         elif myparts[0]=="Module":
-            if("MODULES" not in value_collection):
+            if "MODULES" not in value_collection:
                 value_collection["MODULES"]={}
             if str(myparts[1]) not in value_collection["MODULES"]:
                 value_collection["MODULES"][str(myparts[1])]=MODULE_proto()
