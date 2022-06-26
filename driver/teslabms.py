@@ -130,7 +130,7 @@ def main():
         dbusservice['/Dc/0/Power'] = power
         dbusservice['/Dc/0/Temperature']=value_collection['STAT'].avgTempC
 
-        if value_collection['SHUNT'].netAmpHours == 0.0:
+        if 'SHUNT' not in value_collection or value_collection['SHUNT'].netAmpHours == 0.0:
             dbusservice['/Capacity']   = round(Soc * battery["installed_capacity"]/100,2)
             dbusservice['/TimeToGo']   = 0
             dbusservice['/CapacityWh'] = round( Soc * battery["installed_capacity_wh"], 2 )
