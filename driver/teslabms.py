@@ -130,9 +130,10 @@ def main():
         dbusservice['/Dc/0/Power'] = power
         dbusservice['/Dc/0/Temperature']=value_collection['STAT'].avgTempC
 
-        # Capacity = round(Soc*battery["installed_capacity"]/100,2)
-        # dbusservice['/Capacity']=Capacity
-        # dbusservice['/TimeToGo']=0
+        if value_collection['SHUNT'].netAmpHours == 0.0:
+            dbusservice['/Capacity']   = round(Soc * battery["installed_capacity"]/100,2)
+            dbusservice['/TimeToGo']   = 0
+            dbusservice['/CapacityWh'] = round( Soc * battery["installed_capacity_wh"], 2 )
 
     def dbusPublishModules(moduleID):
         dbusservice[f"/Module/{moduleID}/Sum"]=value_collection["MODULES"][str(moduleID)].moduleVdc
@@ -293,7 +294,7 @@ def setupDbusPaths():
     dbusservice.add_path('/System/MinVoltageCellId', None, writeable=True)
     dbusservice.add_path('/History/ChargeCycles', None, writeable=True)
     dbusservice.add_path('/History/TotalAhDrawn', None, writeable=True)
-    dbusservice.add_path('/Balancing', None, writeable=True)
+    dbusservice.add_path('/Balancing', None, writeable=True, gettextcallback=lambda p, v: ["No", "Yes"][v])
 
     dbusservice.add_path('/Io/AllowToCharge', 1, writeable=True)
     dbusservice.add_path('/Io/AllowToDischarge', 1, writeable=True)
