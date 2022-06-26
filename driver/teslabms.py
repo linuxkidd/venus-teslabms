@@ -120,6 +120,8 @@ def main():
         dbusservice['/CapacityWh'] = round( battery["installed_capacity_wh"] - value_collection['SHUNT'].netWattHours, 2 )
 
     def dbusPublishStat():
+        if value_collection['STAT'].packVdc == 0:
+            return
         Soc = round(((value_collection['STAT'].packVdc-battery["min_battery_voltage"])/(battery["max_battery_voltage"]-battery["min_battery_voltage"]))*100,1)
         dbusservice['/Soc']=Soc
         dbusservice['/Dc/0/Voltage']=value_collection['STAT'].packVdc
@@ -136,6 +138,8 @@ def main():
             dbusservice['/CapacityWh'] = round( Soc * battery["installed_capacity_wh"], 2 )
 
     def dbusPublishModules(moduleID):
+        if value_collection["MODULES"][str(moduleID)].moduleVdc == 0:
+            return
         dbusservice[f"/Module/{moduleID}/Sum"]=value_collection["MODULES"][str(moduleID)].moduleVdc
         dbusservice[f"/Module/{moduleID}/Temperature/Neg"]=value_collection["MODULES"][str(moduleID)].negTempC
         dbusservice[f"/Module/{moduleID}/Temperature/Pos"]=value_collection["MODULES"][str(moduleID)].posTempC
