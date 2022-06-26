@@ -140,7 +140,7 @@ def main():
         dbusservice[f"/Module/{moduleID}/Temperature/Pos"]=value_collection["MODULES"][str(moduleID)].posTempC
         for cellid in range(6):
             dbusservice[f"/Module/{moduleID}/Cell_{cellid+1}/Volts"]=value_collection["MODULES"][str(moduleID)].cellVdc[cellid]
-            dbusservice[f"/Module/{moduleID}/Cell_{cellid+1}/Balancing"]=f'{yn[value_collection["MODULES"][str(moduleID)].cellBal[cellid]]}'
+            dbusservice[f"/Module/{moduleID}/Cell_{cellid+1}/Balancing"]= value_collection["MODULES"][str(moduleID)].cellBal[cellid]
         if moduleID==4:
             dbusPublishMinMax()
 
