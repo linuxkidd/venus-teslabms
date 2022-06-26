@@ -128,7 +128,6 @@ def main():
         if 'SHUNT' not in value_collection:
             power = 0
             dbusservice['/Capacity']   = round(Soc * battery["installed_capacity"]/100,2)
-            dbusservice['/TimeToGo']   = 0
             dbusservice['/CapacityWh'] = round( Soc * battery["installed_capacity_wh"], 2 )
         else:
             power = round(value_collection['SHUNT'].current * value_collection['STAT'].packVdc,1)
