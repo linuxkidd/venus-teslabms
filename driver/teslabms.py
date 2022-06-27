@@ -31,7 +31,7 @@ battery = {
     'cell_count': 6,
     'module_count': 4,
     'installed_capacity': 800,
-    'installed_capacity_wh': 800
+    'installed_capacity_wh': 18909
 }
 
 def signal_handler(signal, frame):
