@@ -118,6 +118,8 @@ def main():
         dbusservice['/Dc/0/Power'] = power
         dbusservice['/Capacity']   = round( battery["installed_capacity"] - value_collection['SHUNT'].netAmpHours, 2 )
         dbusservice['/CapacityWh'] = round( battery["installed_capacity_wh"] - value_collection['SHUNT'].netWattHours, 2 )
+        dbusservice['/ConsumedAmphours'] = round( value_collection['SHUNT'].netAmpHours, 2 )
+        dbusservice['/ConsumedWatthours'] = round( value_collection['SHUNT'].netWattHours, 2 )
 
     def dbusPublishStat():
         if value_collection['STAT'].packVdc == 0:
@@ -127,8 +129,10 @@ def main():
         dbusservice['/Dc/0/Voltage']=value_collection['STAT'].packVdc
         if 'SHUNT' not in value_collection:
             power = 0
-            dbusservice['/Capacity']   = round(Soc * battery["installed_capacity"]/100,2)
-            dbusservice['/CapacityWh'] = round( Soc * battery["installed_capacity_wh"], 2 )
+            dbusservice['/Capacity']   = round( Soc * battery["installed_capacity"]/100, 2 )
+            dbusservice['/CapacityWh'] = round( Soc * battery["installed_capacity_wh"],  2 )
+            dbusservice['/ConsumedAmphours'] = round( ( 100 - Soc ) * battery["installed_capacity"]/100, 2 )
+            dbusservice['/ConsumedWatthours'] = round( ( 100 - Soc ) * battery["installed_capacity_wh"]/100, 2 )
         else:
             power = round(value_collection['SHUNT'].current * value_collection['STAT'].packVdc,1)
         dbusservice['/Dc/0/Power'] = power
