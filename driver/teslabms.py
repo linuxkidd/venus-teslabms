@@ -24,14 +24,14 @@ driver = {
 }
 
 battery = {
-    'min_battery_voltage': 19.6,
+    'min_battery_voltage': 18.0,
     'max_battery_voltage': 25.2,
-    'max_charge_current': 800,
-    'max_discharge_current': 800,
+    'max_charge_current': 880,
+    'max_discharge_current': 880,
     'cell_count': 6,
     'module_count': 4,
-    'installed_capacity': 800,
-    'installed_capacity_wh': 18909
+    'installed_capacity': 880,
+    'installed_capacity_wh': 20800
 }
 
 def signal_handler(signal, frame):
