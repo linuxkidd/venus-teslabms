@@ -9,6 +9,6 @@
 
 . /opt/victronenergy/serial-starter/run-service.sh
 
-ln -s /dev/$tty /dev/ttyTESLABMS
+ln -s /dev/$tty /dev/ttyBMS
 app="/usr/bin/python /opt/victronenergy/teslabms/teslabms.py"
-start -d /dev/$tty --victron
+start -d /dev/$tty
