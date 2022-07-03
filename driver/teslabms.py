@@ -34,6 +34,11 @@ battery = {
     'installed_capacity_wh': 20800
 }
 
+energy = {
+    'netAh' = 0.0,
+    'netWh' = 0.0
+}
+
 def signal_handler(signal, frame):
     print('You pressed Ctrl+C!  Exiting...')
     print('')
@@ -51,11 +56,15 @@ class SHUNT_proto():
         return getattr(self,item)
 
     def decode(self, packet_buffer):
-        self.decoded      = 1
-        self.voltage      = float(packet_buffer[1])
-        self.current      = float(packet_buffer[2])
-        self.netAmpHours  = float(packet_buffer[3])
-        self.netWattHours = float(packet_buffer[4])
+        try:
+            self.decoded      = 1
+            self.voltage      = float(packet_buffer[1])
+            self.current      = float(packet_buffer[2])
+
+            self.netAmpHours  = float(packet_buffer[3])
+            self.netWattHours = float(packet_buffer[4])
+        except:
+            self.decoded      = 0
 
 class STAT_proto():
     isFaulted  = 0      # 1
@@ -117,9 +126,11 @@ def main():
             power = 0
         dbusservice['/Dc/0/Power'] = power
         dbusservice['/Capacity']   = round( battery["installed_capacity"] - value_collection['SHUNT'].netAmpHours, 2 )
-        dbusservice['/CapacityWh'] = round( battery["installed_capacity_wh"] - value_collection['SHUNT'].netWattHours, 2 )
-        dbusservice['/ConsumedAmphours'] = round( value_collection['SHUNT'].netAmpHours, 2 )
-        dbusservice['/ConsumedWatthours'] = round( value_collection['SHUNT'].netWattHours, 2 )
+        
+        ## My shunt is installed on the negative side, so the values provided by it for voltage, and thus, power and energy, are incorrect.
+        #dbusservice['/CapacityWh'] = round( battery["installed_capacity_wh"] - value_collection['SHUNT'].netWattHours, 2 )
+        #dbusservice['/ConsumedAmphours'] = round( value_collection['SHUNT'].netAmpHours, 2 )
+        #dbusservice['/ConsumedWatthours'] = round( value_collection['SHUNT'].netWattHours, 2 )
 
     def dbusPublishStat():
         if value_collection['STAT'].packVdc == 0:
@@ -211,7 +222,8 @@ def main():
             if "SHUNT" not in value_collection:
                 value_collection["SHUNT"]=SHUNT_proto()
             value_collection["SHUNT"].decode(myparts)
-            dbusPublishShunt()
+            if value_collection["SHUNT"].decoded == 1:
+                dbusPublishShunt()
 
         elif myparts[0]=="Module":
             if "MODULES" not in value_collection:
