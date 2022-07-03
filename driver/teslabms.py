@@ -34,11 +34,6 @@ battery = {
     'installed_capacity_wh': 20800
 }
 
-energy = {
-    'netAh' = 0.0,
-    'netWh' = 0.0
-}
-
 def signal_handler(signal, frame):
     print('You pressed Ctrl+C!  Exiting...')
     print('')
@@ -47,10 +42,12 @@ def signal_handler(signal, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 class SHUNT_proto():
-    voltage      = 0.0
-    current      = 0.0
-    netAmpHours  = 0.0
-    netWattHours = 0.0
+    voltage        = 0.0
+    current        = 0.0
+    netAmpHours    = 0.0
+    netWattHours   = 0.0
+    lastDecode     = 0.0
+    previousDecode = 0.0
 
     def __getitem__(self, item):
         return getattr(self,item)
@@ -63,6 +60,8 @@ class SHUNT_proto():
 
             self.netAmpHours  = float(packet_buffer[3])
             self.netWattHours = float(packet_buffer[4])
+            self.previousDecode = self.lastDecode
+            self.lastDecode   = time.time()
         except:
             self.decoded      = 0
 
@@ -118,19 +117,21 @@ def main():
             exit()
 
     def dbusPublishShunt():
+        if value_collection['SHUNT'].voltage < 10:
+            ## My shunt is installed on the negative side, so the values provided by it for voltage, and thus, power and energy, are incorrect.
+            try:
+                value_collection['SHUNT'].netWattHours += value_collection['SHUNT'].power * (( value_collection['SHUNT'].lastDecode - value_collection['SHUNT'].previousDecode) / ( 60*60 ) )
+                value_collection['SHUNT'].power = round(value_collection['SHUNT'].current * value_collection['STAT'].packVdc,1)
+            except:
+                value_collection['SHUNT'].power = 0
+
         dbusservice['/Dc/0/Current'] = value_collection['SHUNT'].current
-        # dbusservice['/DC/0/Power']   = value_collection['SHUNT'].power
-        try:
-            power = round(value_collection['SHUNT'].current * value_collection['STAT'].packVdc,1)
-        except:
-            power = 0
-        dbusservice['/Dc/0/Power'] = power
         dbusservice['/Capacity']   = round( battery["installed_capacity"] - value_collection['SHUNT'].netAmpHours, 2 )
-        
-        ## My shunt is installed on the negative side, so the values provided by it for voltage, and thus, power and energy, are incorrect.
-        #dbusservice['/CapacityWh'] = round( battery["installed_capacity_wh"] - value_collection['SHUNT'].netWattHours, 2 )
-        #dbusservice['/ConsumedAmphours'] = round( value_collection['SHUNT'].netAmpHours, 2 )
-        #dbusservice['/ConsumedWatthours'] = round( value_collection['SHUNT'].netWattHours, 2 )
+        dbusservice['/ConsumedAmphours'] = round( value_collection['SHUNT'].netAmpHours, 2 )
+
+        dbusservice['/Dc/0/Power'] = value_collection['SHUNT'].power
+        dbusservice['/CapacityWh'] = round( battery["installed_capacity_wh"] - value_collection['SHUNT'].netWattHours, 2 )
+        dbusservice['/ConsumedWatthours'] = round( value_collection['SHUNT'].netWattHours, 2 )
 
     def dbusPublishStat():
         if value_collection['STAT'].packVdc == 0:
