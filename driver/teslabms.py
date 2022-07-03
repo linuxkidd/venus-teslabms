@@ -211,11 +211,13 @@ def main():
     def handle_serial_data():
         myline=ser.readline()
         myparts=myline.decode('ascii').rstrip().split(',')
-        for mpidx in range(len(myparts)):  
+        for mpidx in range(len(myparts)):
             if re.match("^[0-9]*$",myparts[mpidx]):
                 myparts[mpidx]=int(myparts[mpidx])
-            elif re.match("^[0-9\.]*$",myparts[mpidx]):
+            elif re.match("^[0-9]*\.[0-9]*$",myparts[mpidx]):
                 myparts[mpidx]=float(myparts[mpidx])
+            elif mpidx > 0:
+                return
         if args.debug:
             print(myparts)
         if myparts[0]=="STAT":
