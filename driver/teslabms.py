@@ -216,8 +216,6 @@ def main():
                 myparts[mpidx]=int(myparts[mpidx])
             elif re.match("^[0-9]*\.[0-9]*$",myparts[mpidx]):
                 myparts[mpidx]=float(myparts[mpidx])
-            elif mpidx > 0:
-                return
         if args.debug:
             print(myparts)
         if myparts[0]=="STAT":
