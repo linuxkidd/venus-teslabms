@@ -35,8 +35,8 @@ battery = {
 }
 
 def signal_handler(signal, frame):
-    print('You pressed Ctrl+C!  Exiting...')
-    print('')
+    print('You pressed Ctrl+C!  Exiting...',flush=True)
+    print('',flush=True)
     exit(0)
 
 signal.signal(signal.SIGINT, signal_handler)
@@ -112,7 +112,7 @@ def main():
             ser = serial.Serial(serial_port,115200)
             return ser
         except:
-            print('Error: Failed to open communications port, exiting')
+            print('Error: Failed to open communications port, exiting', flush=True)
             exit()
 
     def dbusPublishShunt():
@@ -216,7 +216,7 @@ def main():
             elif re.match("^[0-9]*\.[0-9]*$",myparts[mpidx]):
                 myparts[mpidx]=float(myparts[mpidx])
         if args.debug:
-            print(myparts)
+            print(myparts,flush=True)
         if myparts[0]=="STAT":
             value_collection['STAT'].decode(myparts)
             dbusPublishStat()
