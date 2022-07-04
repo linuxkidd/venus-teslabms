@@ -42,12 +42,13 @@ def signal_handler(signal, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 class SHUNT_proto():
-    voltage        = 0.0
-    current        = 0.0
-    netAmpHours    = 0.0
-    netWattHours   = 0.0
-    lastDecode     = 0.0
-    previousDecode = 0.0
+    voltage      = 0.0
+    current      = 0.0
+    netAmpHours  = 0.0
+    netWattHours = 0.0
+    lastDecode   = 0.0
+    priorDecode  = 0.0
+    power        = 0.0
 
     def __getitem__(self, item):
         return getattr(self,item)
@@ -57,10 +58,11 @@ class SHUNT_proto():
             self.decoded      = 1
             self.voltage      = float(packet_buffer[1])
             self.current      = float(packet_buffer[2])
+            self.power        = self.volgage * self.current
 
             self.netAmpHours  = float(packet_buffer[3])
             self.netWattHours = float(packet_buffer[4])
-            self.previousDecode = self.lastDecode
+            self.priorDecode = self.lastDecode
             self.lastDecode   = time.time()
         except:
             self.decoded      = 0
@@ -120,7 +122,7 @@ def main():
         if value_collection['SHUNT'].voltage < 10:
             ## My shunt is installed on the negative side, so the values provided by it for voltage, and thus, power and energy, are incorrect.
             try:
-                value_collection['SHUNT'].netWattHours += value_collection['SHUNT'].power * (( value_collection['SHUNT'].lastDecode - value_collection['SHUNT'].previousDecode) / ( 60*60 ) )
+                value_collection['SHUNT'].netWattHours += value_collection['SHUNT'].power * (( value_collection['SHUNT'].lastDecode - value_collection['SHUNT'].priorDecode) / ( 60*60 ) )
                 value_collection['SHUNT'].power = round(value_collection['SHUNT'].current * value_collection['STAT'].packVdc,1)
             except:
                 value_collection['SHUNT'].power = 0
