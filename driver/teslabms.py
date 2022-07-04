@@ -54,18 +54,15 @@ class SHUNT_proto():
         return getattr(self,item)
 
     def decode(self, packet_buffer):
-        try:
-            self.decoded      = 1
-            self.voltage      = float(packet_buffer[1])
-            self.current      = float(packet_buffer[2])
-            self.power        = self.volgage * self.current
+        self.decoded      = 1
+        self.voltage      = float(packet_buffer[1])
+        self.current      = float(packet_buffer[2])
+        self.power        = self.voltage * self.current
 
-            self.netAmpHours  = float(packet_buffer[3])
-            self.netWattHours = float(packet_buffer[4])
-            self.priorDecode = self.lastDecode
-            self.lastDecode   = time.time()
-        except:
-            self.decoded      = 0
+        self.netAmpHours  = float(packet_buffer[3])
+        self.netWattHours = float(packet_buffer[4])
+        self.priorDecode = self.lastDecode
+        self.lastDecode   = time.time()
 
 class STAT_proto():
     isFaulted  = 0      # 1
