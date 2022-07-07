@@ -54,15 +54,19 @@ class SHUNT_proto():
         return getattr(self,item)
 
     def decode(self, packet_buffer):
-        self.decoded      = 1
-        self.voltage      = float(packet_buffer[1])
-        self.current      = float(packet_buffer[2])
-        self.power        = self.voltage * self.current
+        if abs(float(packet_buffer[2])) > battery["max_discharge_current"] or
+            abs(float(packet_buffer[2])) > battery["max_charge_current"]:
+            self.decoded      = 0
+        else:
+            self.decoded      = 1
+            self.voltage      = float(packet_buffer[1])
+            self.current      = float(packet_buffer[2])
+            self.power        = self.voltage * self.current
 
-        self.netAmpHours  = float(packet_buffer[3])
-        self.netWattHours = float(packet_buffer[4])
-        self.priorDecode = self.lastDecode
-        self.lastDecode   = time.time()
+            self.netAmpHours  = float(packet_buffer[3])
+            self.netWattHours = float(packet_buffer[4])
+            self.priorDecode = self.lastDecode
+            self.lastDecode   = time.time()
 
 class STAT_proto():
     isFaulted  = 0      # 1
@@ -141,7 +145,7 @@ def main():
         if 'SHUNT' not in value_collection:
             power = 0
             dbusservice['/Capacity']   = round( Soc * battery["installed_capacity"]/100, 2 )
-            dbusservice['/CapacityWh'] = round( Soc * battery["installed_capacity_wh"],  2 )
+            dbusservice['/CapacityWh'] = round( Soc * battery["installed_capacity_wh"]/100,  2 )
             dbusservice['/ConsumedAmphours'] = round( ( 100 - Soc ) * battery["installed_capacity"]/100, 2 )
             dbusservice['/ConsumedWatthours'] = round( ( 100 - Soc ) * battery["installed_capacity_wh"]/100, 2 )
         else:
