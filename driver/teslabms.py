@@ -31,7 +31,9 @@ battery = {
     'cell_count': 6,
     'module_count': 4,
     'installed_capacity': 880,
-    'installed_capacity_wh': 20800
+    'installed_capacity_wh': 20800,
+    'whIn':          0.0,
+    'whOut':         0.0,
 }
 
 def signal_handler(signal, frame):
@@ -54,8 +56,7 @@ class SHUNT_proto():
         return getattr(self,item)
 
     def decode(self, packet_buffer):
-        if abs(float(packet_buffer[2])) > battery["max_discharge_current"] or
-            abs(float(packet_buffer[2])) > battery["max_charge_current"]:
+        if abs(float(packet_buffer[2])) > battery["max_discharge_current"] or abs(float(packet_buffer[2])) > battery["max_charge_current"]:
             self.decoded      = 0
         else:
             self.decoded      = 1
@@ -135,6 +136,13 @@ def main():
         dbusservice['/Dc/0/Power'] = value_collection['SHUNT'].power
         dbusservice['/CapacityWh'] = round( battery["installed_capacity_wh"] + value_collection['SHUNT'].netWattHours, 2 )
         dbusservice['/ConsumedWatthours'] = round( -1 * value_collection['SHUNT'].netWattHours, 2 )
+        if value_collection['SHUNT'].power > 0:
+            battery['whIn'] += value_collection['SHUNT'].power * ( value_collection['SHUNT'].lastDecode - value_collection['SHUNT'].priorDecode ) / 3600
+            dbusservice['WatthoursIn'] = battery['whIn']
+        elif value_collection['SHUNT'].power < 0:
+            battery['whOut'] += abs(value_collection['SHUNT'].power * ( value_collection['SHUNT'].lastDecode - value_collection['SHUNT'].priorDecode ) / 3600)
+            dbusservice['WatthoursOut'] = battery['whOut']
+
 
     def dbusPublishStat():
         if value_collection['STAT'].packVdc == 0:
@@ -295,6 +303,11 @@ def setupDbusPaths():
     dbusservice.add_path('/ConsumedAmphours', 0, writeable=True,
                                 gettextcallback=lambda p, v: "{:0.0f}Ah".format(v))
     dbusservice.add_path('/ConsumedWatthours', 0, writeable=True,
+                                gettextcallback=lambda p, v: "{:0.0f}Wh".format(v))
+
+    dbusservice.add_path('/WatthoursIn', 0, writeable=True,
+                                gettextcallback=lambda p, v: "{:0.0f}Wh".format(v))
+    dbusservice.add_path('/WatthoursOut', 0, writeable=True,
                                 gettextcallback=lambda p, v: "{:0.0f}Wh".format(v))
 
     # Create SOC, DC and System items
