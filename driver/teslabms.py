@@ -138,10 +138,10 @@ def main():
         dbusservice['/ConsumedWatthours'] = round( -1 * value_collection['SHUNT'].netWattHours, 2 )
         if value_collection['SHUNT'].power > 0:
             battery['whIn'] += value_collection['SHUNT'].power * ( value_collection['SHUNT'].lastDecode - value_collection['SHUNT'].priorDecode ) / 3600
-            dbusservice['WatthoursIn'] = battery['whIn']
+            dbusservice['/WatthoursIn'] = battery['whIn']
         elif value_collection['SHUNT'].power < 0:
             battery['whOut'] += abs(value_collection['SHUNT'].power * ( value_collection['SHUNT'].lastDecode - value_collection['SHUNT'].priorDecode ) / 3600)
-            dbusservice['WatthoursOut'] = battery['whOut']
+            dbusservice['/WatthoursOut'] = battery['whOut']
 
 
     def dbusPublishStat():
