@@ -34,6 +34,8 @@ battery = {
     'installed_capacity_wh': 20800,
     'whIn':          0.0,
     'whOut':         0.0,
+    'ahIn':          0.0,
+    'ahOut':         0.0
 }
 
 def signal_handler(signal, frame):
@@ -54,6 +56,9 @@ class SHUNT_proto():
 
     def __getitem__(self, item):
         return getattr(self,item)
+
+    def __setitem__(self, item, val):
+        return setattr(self,item, val)
 
     def decode(self, packet_buffer):
         if abs(float(packet_buffer[2])) > battery["max_discharge_current"] or abs(float(packet_buffer[2])) > battery["max_charge_current"]:
@@ -130,18 +135,23 @@ def main():
                 value_collection['SHUNT'].power = 0
 
         dbusservice['/Dc/0/Current'] = value_collection['SHUNT'].current
-        dbusservice['/Capacity']   = round( battery["installed_capacity"] + value_collection['SHUNT'].netAmpHours, 2 )
-        dbusservice['/ConsumedAmphours'] = round( -1 * value_collection['SHUNT'].netAmpHours, 2 )
+
+        if value_collection['SHUNT'].current > 0:
+            battery['ahIn'] += value_collection['SHUNT'].current * ( value_collection['SHUNT'].lastDecode - value_collection['SHUNT'].priorDecode ) / 3600
+        else:
+            battery['ahOut'] += abs( value_collection['SHUNT'].current * ( value_collection['SHUNT'].lastDecode - value_collection['SHUNT'].priorDecode ) / 3600 )
+        dbusservice['/ConsumedAmphours'] = round( battery['ahIn'] - battery['ahOut'], 2 )
+        dbusservice['/Capacity']   = round( battery["installed_capacity"] - (battery['ahIn'] - battery['ahOut']), 2 )
 
         dbusservice['/Dc/0/Power'] = value_collection['SHUNT'].power
-        dbusservice['/CapacityWh'] = round( battery["installed_capacity_wh"] + value_collection['SHUNT'].netWattHours, 2 )
-        dbusservice['/ConsumedWatthours'] = round( -1 * value_collection['SHUNT'].netWattHours, 2 )
         if value_collection['SHUNT'].power > 0:
             battery['whIn'] += value_collection['SHUNT'].power * ( value_collection['SHUNT'].lastDecode - value_collection['SHUNT'].priorDecode ) / 3600
             dbusservice['/WatthoursIn'] = battery['whIn']
         elif value_collection['SHUNT'].power < 0:
             battery['whOut'] += abs(value_collection['SHUNT'].power * ( value_collection['SHUNT'].lastDecode - value_collection['SHUNT'].priorDecode ) / 3600)
             dbusservice['/WatthoursOut'] = battery['whOut']
+        dbusservice['/CapacityWh'] = round( battery["installed_capacity_wh"] + value_collection['SHUNT'].netWattHours, 2 )
+        dbusservice['/ConsumedWatthours'] = round( -1 * value_collection['SHUNT'].netWattHours, 2 )
 
 
     def dbusPublishStat():
@@ -150,16 +160,11 @@ def main():
         Soc = round(((value_collection['STAT'].packVdc-battery["min_battery_voltage"])/(battery["max_battery_voltage"]-battery["min_battery_voltage"]))*100,1)
         dbusservice['/Soc']=Soc
         dbusservice['/Dc/0/Voltage']=value_collection['STAT'].packVdc
-        if 'SHUNT' not in value_collection:
-            power = 0
-            dbusservice['/Capacity']   = round( Soc * battery["installed_capacity"]/100, 2 )
-            dbusservice['/CapacityWh'] = round( Soc * battery["installed_capacity_wh"]/100,  2 )
-            dbusservice['/ConsumedAmphours'] = round( ( 100 - Soc ) * battery["installed_capacity"]/100, 2 )
-            dbusservice['/ConsumedWatthours'] = round( ( 100 - Soc ) * battery["installed_capacity_wh"]/100, 2 )
-        else:
-            power = round(value_collection['SHUNT'].current * value_collection['STAT'].packVdc,1)
-        dbusservice['/Dc/0/Power'] = power
         dbusservice['/Dc/0/Temperature']=value_collection['STAT'].avgTempC
+
+        if 'SHUNT' not in value_collection:
+            dbusservice['/Dc/0/Power'] = 0
+            dbusservice['/Dc/0/Current'] = 0
 
     def dbusPublishModules(moduleID):
         if value_collection["MODULES"][str(moduleID)].moduleVdc == 0:
